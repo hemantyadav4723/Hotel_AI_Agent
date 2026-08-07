@@ -1,0 +1,9 @@
+============================================================Department ID : AAA111
+Department Name : Reception
+
+============================================================Department ID : AAA112
+Department Name : House keeping
+
+============================================================Department ID : AAA113
+Department Name : Kitchen
+
