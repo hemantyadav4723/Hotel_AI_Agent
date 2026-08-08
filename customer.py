@@ -2,10 +2,9 @@ from utils.date_time import current_datetime_object
 from utils.validators import *
 from utils.display import *
 from utils.helpers import *
+from database.db_manager import save_customer,view_customers
 from billing import (
-    save_customer,
     get_next_customer_id,
-    view_customers,
     search_customer,
     update_customer,
     delete_customer,
