@@ -324,3 +324,171 @@ def get_next_staff_id():
     connection.close()
 
     return f"EMP{1001 + count}"
+
+def view_staff():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT * FROM staff")
+
+    staffs = cursor.fetchall()
+
+    connection.close()
+
+    if not staffs:
+
+        print("No Staff Found.")
+        return
+
+    print("=" * 60)
+    print("              STAFF LIST")
+    print("=" * 60)
+
+    for staff in staffs:
+
+        print(f"Staff ID     : {staff['staff_id']}")
+        print(f"Name         : {staff['staff_name']}")
+        print(f"Mobile       : {staff['mobile']}")
+        print(f"Email        : {staff['email']}")
+        print(f"Department   : {staff['department']}")
+        print(f"Designation  : {staff['designation']}")
+        print(f"Salary       : {staff['salary']}")
+        print(f"Joining Date : {staff['joining_date']}")
+        print("-" * 60)
+
+def search_staff():
+
+    print("=" * 60)
+    print("            SEARCH STAFF")
+    print("=" * 60)
+
+    staff_id = input("Enter Staff ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM staff WHERE staff_id = ?",
+        (staff_id,)
+    )
+
+    staff = cursor.fetchone()
+
+    connection.close()
+
+    if staff:
+
+        print(f"Staff ID     : {staff['staff_id']}")
+        print(f"Name         : {staff['staff_name']}")
+        print(f"Mobile       : {staff['mobile']}")
+        print(f"Email        : {staff['email']}")
+        print(f"Department   : {staff['department']}")
+        print(f"Designation  : {staff['designation']}")
+        print(f"Salary       : {staff['salary']}")
+        print(f"Joining Date : {staff['joining_date']}")
+
+    else:
+
+        print("Staff Not Found.")
+
+def update_staff():
+
+    print("=" * 60)
+    print("            UPDATE STAFF")
+    print("=" * 60)
+
+    staff_id = input("Enter Staff ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM staff WHERE staff_id = ?",
+        (staff_id,)
+    )
+
+    staff = cursor.fetchone()
+
+    if not staff:
+
+        print("Staff Not Found.")
+
+        connection.close()
+
+        return
+
+    print("\nStaff Found\n")
+
+    name = input("Enter New Name : ")
+    mobile = input("Enter New Mobile : ")
+    email = input("Enter New Email : ")
+    department = input("Enter New Department : ")
+    designation = input("Enter New Designation : ")
+    salary = input("Enter New Salary : ")
+
+    cursor.execute("""
+    UPDATE staff
+    SET staff_name = ?,
+        mobile = ?,
+        email = ?,
+        department = ?,
+        designation = ?,
+        salary = ?
+    WHERE staff_id = ?
+    """, (
+        name,
+        mobile,
+        email,
+        department,
+        designation,
+        salary,
+        staff_id
+    ))
+
+    connection.commit()
+
+    connection.close()
+
+    print("\nStaff Updated Successfully.")
+
+def delete_staff():
+
+    print("=" * 60)
+    print("            DELETE STAFF")
+    print("=" * 60)
+
+    staff_id = input("Enter Staff ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM staff WHERE staff_id = ?",
+        (staff_id,)
+    )
+
+    staff = cursor.fetchone()
+
+    if not staff:
+
+        print("Staff Not Found.")
+
+        connection.close()
+
+        return
+
+    cursor.execute(
+        "DELETE FROM staff WHERE staff_id = ?",
+        (staff_id,)
+    )
+
+    connection.commit()
+
+    connection.close()
+
+    print("\nStaff Deleted Successfully.")
