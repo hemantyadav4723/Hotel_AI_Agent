@@ -1,3 +1,4 @@
+from datetime import datetime
 import sqlite3
 
 
@@ -492,3 +493,203 @@ def delete_staff():
     connection.close()
 
     print("\nStaff Deleted Successfully.")
+
+def create_attendance_table():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS attendance(
+
+        attendance_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        staff_id TEXT,
+        date TEXT,
+        check_in TEXT,
+        check_out TEXT,
+        status TEXT
+
+    )
+    """)
+
+    connection.commit()
+
+    connection.close()
+
+def staff_check_in():
+
+    print("=" * 60)
+    print("             STAFF CHECK IN")
+    print("=" * 60)
+
+    staff_id = input("Enter Staff ID : ").upper()
+
+    check_in = datetime.now()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    INSERT INTO attendance
+    (staff_id, date, check_in, check_out, status)
+    VALUES (?, ?, ?, ?, ?)
+    """, (
+        staff_id,
+        check_in.strftime("%d-%m-%Y"),
+        check_in.strftime("%I:%M:%S %p"),
+        "--",
+        "Present"
+    ))
+
+    connection.commit()
+
+    connection.close()
+
+    print("\nCheck In Successful.")
+
+def staff_check_out():
+
+    print("=" * 60)
+    print("             STAFF CHECK OUT")
+    print("=" * 60)
+
+    staff_id = input("Enter Staff ID : ").upper()
+
+    check_out = datetime.now().strftime("%I:%M:%S %p")
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    SELECT attendance_id
+    FROM attendance
+    WHERE staff_id = ?
+      AND check_out = '--'
+    ORDER BY attendance_id DESC
+    LIMIT 1
+    """, (staff_id,))
+
+    record = cursor.fetchone()
+
+    if not record:
+
+        print("\nNo Active Check In Found.")
+
+        connection.close()
+
+        return
+
+    cursor.execute("""
+    UPDATE attendance
+    SET check_out = ?
+    WHERE attendance_id = ?
+    """, (
+        check_out,
+        record["attendance_id"]
+    ))
+
+    connection.commit()
+
+    connection.close()
+
+    print("\nCheck Out Successful.")
+
+# create_attendance_table()
+
+def view_attendance():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT * FROM attendance")
+
+    records = cursor.fetchall()
+
+    connection.close()
+
+    if not records:
+
+        print("No Attendance Found.")
+        return
+
+    print("=" * 60)
+    print("          ATTENDANCE HISTORY")
+    print("=" * 60)
+
+    for record in records:
+
+        print(f"Staff ID   : {record['staff_id']}")
+        print(f"Date       : {record['date']}")
+        print(f"Check In   : {record['check_in']}")
+        print(f"Check Out  : {record['check_out']}")
+        print(f"Status     : {record['status']}")
+        print("-" * 60)
+
+def search_attendance():
+
+    print("=" * 60)
+    print("          SEARCH ATTENDANCE")
+    print("=" * 60)
+
+    staff_id = input("Enter Staff ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM attendance WHERE staff_id = ?",
+        (staff_id,)
+    )
+
+    records = cursor.fetchall()
+
+    connection.close()
+
+    if not records:
+
+        print("Attendance Not Found.")
+        return
+
+    for record in records:
+
+        print(f"Staff ID   : {record['staff_id']}")
+        print(f"Date       : {record['date']}")
+        print(f"Check In   : {record['check_in']}")
+        print(f"Check Out  : {record['check_out']}")
+        print(f"Status     : {record['status']}")
+        print("-" * 60)
+
+def monthly_attendance_report():
+
+    print("=" * 60)
+    print("        MONTHLY ATTENDANCE REPORT")
+    print("=" * 60)
+
+    staff_id = input("Enter Staff ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT COUNT(*) AS total FROM attendance WHERE staff_id = ?",
+        (staff_id,)
+    )
+
+    result = cursor.fetchone()
+
+    connection.close()
+
+    total_present = result["total"]
+
+    print("-" * 60)
+    print("Staff ID      :", staff_id)
+    print("Present Days  :", total_present)
+    print("Absent Days   : Under Development")
+    print("Working Hours : Under Development")
+    print("-" * 60)

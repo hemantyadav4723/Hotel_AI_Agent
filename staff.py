@@ -3,15 +3,11 @@ from utils.display import *
 from utils.date_time import current_datetime_object
 from database.db_manager import (
     get_next_staff_id,
-    save_staff, view_staff, search_staff, update_staff, delete_staff
+    save_staff, view_staff, search_staff, update_staff, delete_staff, staff_check_in, staff_check_out, view_attendance,
+    search_attendance, monthly_attendance_report
 )
 
 from billing import (
-    staff_check_in,
-    staff_check_out,
-    view_attendance,
-    search_attendance,
-    monthly_attendance_report,
     save_salary,
     view_salary,
     search_salary,
