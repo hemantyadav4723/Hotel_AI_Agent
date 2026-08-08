@@ -1,10 +1,12 @@
 from utils.validators import *
 from utils.display import *
 from utils.date_time import current_datetime_object
-
-from billing import (
+from database.db_manager import (
     get_next_staff_id,
     save_staff,
+)
+
+from billing import (
     view_staff,
     search_staff,
     update_staff,
