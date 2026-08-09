@@ -5,6 +5,7 @@ from db_manager import (
     create_salary_table,
     create_payroll_table,
     create_department_table,
+    create_orders_table,
     get_all_customers
 )
 
@@ -14,6 +15,7 @@ create_attendance_table()
 create_salary_table()
 create_payroll_table()
 create_department_table()
+create_orders_table()
 print("Payroll Table Ready.")
 
 customers = get_all_customers()
@@ -26,3 +28,24 @@ for customer in customers:
     print(customer["customer_address"])
     print(customer["created_time"])
     print("-" * 40)
+
+from db_manager import get_connection
+
+connection = get_connection()
+
+cursor = connection.cursor()
+
+cursor.execute("""
+SELECT name
+FROM sqlite_master
+WHERE type='table'
+""")
+
+tables = cursor.fetchall()
+
+for table in tables:
+    print(table["name"])
+
+connection.close()
+
+print("Order Table Ready.")

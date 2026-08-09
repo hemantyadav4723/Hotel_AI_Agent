@@ -1,9 +1,10 @@
 from data import food_menu
-from billing import print_final_bill, save_order
+from billing import print_final_bill
 from utils.display import *
 from utils.validators import *
 from utils.date_time import current_datetime_object, generate_order_id
 from utils.helpers import get_restaurant_customer_details
+from database.db_manager import save_order
 
 def restaurant_menu():
 

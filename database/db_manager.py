@@ -1,11 +1,18 @@
 from datetime import datetime
 import sqlite3
+import json
 
 
 DATABASE_NAME = "hotel.db"
 
+import os
+import sqlite3
+
+DATABASE_NAME = "hotel.db"
 
 def get_connection():
+
+    print("Database Path :", os.path.abspath(DATABASE_NAME))
 
     connection = sqlite3.connect(DATABASE_NAME)
 
@@ -1297,4 +1304,191 @@ def delete_department():
     connection.close()
 
     print("Department Deleted Successfully.")
-    
+
+def create_orders_table():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS orders(
+
+        order_id TEXT PRIMARY KEY,
+        order_date TEXT,
+        order_time TEXT,
+        customer_name TEXT,
+        customer_mobile TEXT,
+        table_number TEXT,
+        cart TEXT
+
+    )
+    """)
+
+    connection.commit()
+
+    connection.close()
+
+def save_order(
+    cart,
+    order_id,
+    order_time,
+    customer_name,
+    customer_mobile,
+    table_number
+):
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    INSERT INTO orders(
+        order_id,
+        order_date,
+        order_time,
+        customer_name,
+        customer_mobile,
+        table_number,
+        cart
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (
+        order_id,
+        order_time.strftime("%d-%m-%Y"),
+        order_time.strftime("%I:%M:%S %p"),
+        customer_name,
+        customer_mobile,
+        table_number,
+        json.dumps(cart)
+    ))
+
+    connection.commit()
+
+    connection.close()
+
+def view_orders():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT * FROM orders")
+
+    records = cursor.fetchall()
+
+    connection.close()
+
+    if not records:
+
+        print("No Orders Found.")
+        return
+
+    print("=" * 40)
+    print("      ORDER HISTORY")
+    print("=" * 40)
+
+    import json
+
+    for record in records:
+
+        print(f"Order ID : {record['order_id']}")
+        print(f"Date : {record['order_date']}")
+        print(f"Time : {record['order_time']}")
+        print(f"Customer : {record['customer_name']}")
+        print(f"Mobile : {record['customer_mobile']}")
+        print(f"Table No : {record['table_number']}")
+        print("-" * 40)
+
+        cart = json.loads(record["cart"])
+
+        for item in cart:
+
+            print(
+                f"{item['name']} x{item['quantity']} = ₹{item['subtotal']}"
+            )
+
+        print("=" * 40)
+
+import json
+
+def search_order():
+
+    print("=" * 40)
+    print("      SEARCH ORDER")
+    print("=" * 40)
+
+    search = input("Enter Food Name : ").lower()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT * FROM orders")
+
+    records = cursor.fetchall()
+
+    connection.close()
+
+    found = False
+
+    for record in records:
+
+        cart = json.loads(record["cart"])
+
+        for item in cart:
+
+            if search in item["name"].lower():
+
+                print("=" * 40)
+                print(f"Order ID : {record['order_id']}")
+                print(f"Date : {record['order_date']}")
+                print(f"Time : {record['order_time']}")
+                print(f"Customer : {record['customer_name']}")
+                print(f"Mobile : {record['customer_mobile']}")
+                print(f"Table No : {record['table_number']}")
+                print("-" * 40)
+
+                for food in cart:
+
+                    print(
+                        f"{food['name']} x{food['quantity']} = ₹{food['subtotal']}"
+                    )
+
+                print("=" * 40)
+
+                found = True
+                break
+
+    if not found:
+
+        print("Order Not Found.")
+
+def delete_order():
+
+    print("=" * 40)
+    print("      DELETE ORDER")
+    print("=" * 40)
+
+    order_id = input("Enter Order ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "DELETE FROM orders WHERE order_id = ?",
+        (order_id,)
+    )
+
+    connection.commit()
+
+    if cursor.rowcount > 0:
+
+        print("Order Deleted Successfully.")
+
+    else:
+
+        print("Order Not Found.")
+
+    connection.close()

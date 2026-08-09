@@ -1,5 +1,5 @@
 from restaurant import restaurant_menu
-from billing import delete_order, view_orders,search_order,view_room_bookings,search_room_booking,delete_room_booking
+from billing import view_room_bookings,search_room_booking,delete_room_booking
 from billing import view_table_bookings, search_table_booking,delete_table_booking
 from room_booking import room_booking
 from table_booking import table_booking
@@ -13,6 +13,7 @@ from login import login_management
 from settings import settings_management
 from hotel_information import hotel_information
 from data import *
+from database.db_manager import view_orders, search_order, delete_order
 
 while True:
 
