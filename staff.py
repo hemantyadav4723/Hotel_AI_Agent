@@ -5,16 +5,10 @@ from database.db_manager import (
     get_next_staff_id,
     save_staff, view_staff, search_staff, update_staff, delete_staff, staff_check_in, staff_check_out, view_attendance,
     search_attendance, monthly_attendance_report, save_salary, view_salary, search_salary, update_salary, delete_salary,
-    generate_payroll, view_payroll, search_payroll, delete_payroll
+    generate_payroll, view_payroll, search_payroll, delete_payroll, save_department, view_department, search_department,
+    update_customer, delete_department
 )
-
-from billing import (
-    save_department,
-    view_department,
-    search_department,
-    update_department,
-    delete_department
-)
+from billing import *
 
 def staff_management():
 

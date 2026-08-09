@@ -1117,4 +1117,184 @@ def delete_payroll():
     connection.close()
 
     print("Payroll Deleted Successfully.")
+
+def create_department_table():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS department(
+
+        department_id TEXT PRIMARY KEY,
+        department_name TEXT
+
+    )
+    """)
+
+    connection.commit()
+
+    connection.close()
+
+def save_department(department_id, department_name):
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    INSERT INTO department(
+        department_id,
+        department_name
+    )
+    VALUES (?, ?)
+    """, (
+        department_id,
+        department_name
+    ))
+
+    connection.commit()
+
+    connection.close()
+
+def view_department():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT * FROM department")
+
+    records = cursor.fetchall()
+
+    connection.close()
+
+    if not records:
+
+        print("No Department Found.")
+        return
+
+    print("=" * 60)
+    print("        DEPARTMENT LIST")
+    print("=" * 60)
+
+    for record in records:
+
+        print(f"Department ID   : {record['department_id']}")
+        print(f"Department Name : {record['department_name']}")
+        print("-" * 60)
+
+def search_department():
+
+    print("=" * 60)
+    print("        SEARCH DEPARTMENT")
+    print("=" * 60)
+
+    department_id = input("Enter Department ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM department WHERE department_id = ?",
+        (department_id,)
+    )
+
+    record = cursor.fetchone()
+
+    connection.close()
+
+    if not record:
+
+        print("Department Not Found.")
+        return
+
+    print("=" * 60)
+    print(f"Department ID   : {record['department_id']}")
+    print(f"Department Name : {record['department_name']}")
+    print("=" * 60)
+
+def update_department():
+
+    print("=" * 60)
+    print("        UPDATE DEPARTMENT")
+    print("=" * 60)
+
+    department_id = input("Enter Department ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM department WHERE department_id = ?",
+        (department_id,)
+    )
+
+    record = cursor.fetchone()
+
+    if not record:
+
+        print("Department Not Found.")
+
+        connection.close()
+
+        return
+
+    department_name = input("Enter New Department Name : ")
+
+    cursor.execute("""
+    UPDATE department
+    SET department_name = ?
+    WHERE department_id = ?
+    """, (
+        department_name,
+        department_id
+    ))
+
+    connection.commit()
+
+    connection.close()
+
+    print("Department Updated Successfully.")
+
+def delete_department():
+
+    print("=" * 60)
+    print("        DELETE DEPARTMENT")
+    print("=" * 60)
+
+    department_id = input("Enter Department ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM department WHERE department_id = ?",
+        (department_id,)
+    )
+
+    record = cursor.fetchone()
+
+    if not record:
+
+        print("Department Not Found.")
+
+        connection.close()
+
+        return
+
+    cursor.execute(
+        "DELETE FROM department WHERE department_id = ?",
+        (department_id,)
+    )
+
+    connection.commit()
+
+    connection.close()
+
+    print("Department Deleted Successfully.")
     
