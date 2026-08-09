@@ -1,10 +1,11 @@
 from data import room_menu
-from billing import save_room_booking, is_room_booked
+from billing import is_room_booked
 from datetime import datetime
 from utils.helpers import get_room_booking_customer_details
 from utils.validators import *
 from utils.date_time import current_datetime_object, generate_order_id
 from utils.display import *
+from database.db_manager import save_room_booking
 
 def room_booking():
 

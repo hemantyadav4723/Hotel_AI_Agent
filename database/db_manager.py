@@ -1492,3 +1492,220 @@ def delete_order():
         print("Order Not Found.")
 
     connection.close()
+
+def create_room_bookings_table():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS room_bookings(
+
+        booking_id TEXT PRIMARY KEY,
+        booking_date TEXT,
+        booking_time TEXT,
+        customer_name TEXT,
+        customer_mobile TEXT,
+        room_number TEXT,
+        room_type TEXT,
+        room_price REAL,
+        days INTEGER,
+        subtotal REAL,
+        gst REAL,
+        grand_total REAL
+
+    )
+    """)
+
+    connection.commit()
+
+    connection.close()
+
+def save_room_booking(
+    booking_id,
+    booking_time,
+    customer_name,
+    customer_mobile,
+    room_choice,
+    room_type,
+    room_price,
+    days,
+    total,
+    gst,
+    grand_total
+):
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    INSERT INTO room_bookings(
+
+        booking_id,
+        booking_date,
+        booking_time,
+        customer_name,
+        customer_mobile,
+        room_number,
+        room_type,
+        room_price,
+        days,
+        subtotal,
+        gst,
+        grand_total
+
+    )
+
+    VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
+
+    """, (
+
+        booking_id,
+        booking_time.strftime("%d-%m-%Y"),
+        booking_time.strftime("%I:%M:%S %p"),
+        customer_name,
+        customer_mobile,
+        room_choice,
+        room_type,
+        room_price,
+        days,
+        total,
+        gst,
+        grand_total
+
+    ))
+
+    connection.commit()
+
+    connection.close()
+
+def view_room_bookings():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT * FROM room_bookings")
+
+    records = cursor.fetchall()
+
+    connection.close()
+
+    if not records:
+
+        print("No Room Bookings Found.")
+        return
+
+    print("=" * 50)
+    print("      ROOM BOOKING HISTORY")
+    print("=" * 50)
+
+    for record in records:
+
+        print(f"Booking ID : {record['booking_id']}")
+        print(f"Date : {record['booking_date']}")
+        print(f"Time : {record['booking_time']}")
+
+        print("-" * 50)
+
+        print(f"Customer : {record['customer_name']}")
+        print(f"Mobile : {record['customer_mobile']}")
+
+        print("-" * 50)
+
+        print(f"Room Number : {record['room_number']}")
+        print(f"Room Type : {record['room_type']}")
+        print(f"Price/Night : ₹{record['room_price']}")
+        print(f"Days : {record['days']}")
+
+        print("-" * 50)
+
+        print(f"Subtotal : ₹{record['subtotal']}")
+        print(f"GST : ₹{record['gst']}")
+        print(f"Grand Total : ₹{record['grand_total']}")
+
+        print("=" * 50)
+
+def search_room_booking():
+
+    print("=" * 50)
+    print("      SEARCH ROOM BOOKING")
+    print("=" * 50)
+
+    booking_id = input("Enter Booking ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM room_bookings WHERE booking_id = ?",
+        (booking_id,)
+    )
+
+    record = cursor.fetchone()
+
+    connection.close()
+
+    if record:
+
+        print("=" * 50)
+
+        print(f"Booking ID : {record['booking_id']}")
+        print(f"Date : {record['booking_date']}")
+        print(f"Time : {record['booking_time']}")
+
+        print("-" * 50)
+
+        print(f"Customer : {record['customer_name']}")
+        print(f"Mobile : {record['customer_mobile']}")
+
+        print("-" * 50)
+
+        print(f"Room Number : {record['room_number']}")
+        print(f"Room Type : {record['room_type']}")
+        print(f"Price/Night : ₹{record['room_price']}")
+        print(f"Days : {record['days']}")
+
+        print("-" * 50)
+
+        print(f"Subtotal : ₹{record['subtotal']}")
+        print(f"GST : ₹{record['gst']}")
+        print(f"Grand Total : ₹{record['grand_total']}")
+
+        print("=" * 50)
+
+    else:
+
+        print("Booking Not Found.")
+
+def delete_room_booking():
+
+    print("=" * 50)
+    print("      DELETE ROOM BOOKING")
+    print("=" * 50)
+
+    booking_id = input("Enter Booking ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "DELETE FROM room_bookings WHERE booking_id = ?",
+        (booking_id,)
+    )
+
+    connection.commit()
+
+    if cursor.rowcount > 0:
+
+        print("Room Booking Deleted Successfully.")
+
+    else:
+
+        print("Booking Not Found.")
+
+    connection.close()
