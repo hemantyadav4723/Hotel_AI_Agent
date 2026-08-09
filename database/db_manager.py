@@ -926,4 +926,195 @@ def delete_salary():
     connection.close()
 
     print("\nSalary Deleted Successfully.")
+
+def create_payroll_table():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS payroll(
+
+        payroll_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        staff_id TEXT,
+        staff_name TEXT,
+        department TEXT,
+        basic_salary REAL,
+        bonus REAL,
+        deduction REAL,
+        net_salary REAL,
+        payroll_status TEXT
+
+    )
+    """)
+
+    connection.commit()
+
+    connection.close()
+
+def generate_payroll():
+
+    print("=" * 60)
+    print("           MONTHLY PAYROLL")
+    print("=" * 60)
+
+    staff_id = input("Enter Staff ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM salary WHERE staff_id = ?",
+        (staff_id,)
+    )
+
+    record = cursor.fetchone()
+
+    if not record:
+
+        print("Salary Record Not Found.")
+
+        connection.close()
+
+        return
+
+    cursor.execute("""
+    INSERT INTO payroll(
+        staff_id,
+        staff_name,
+        department,
+        basic_salary,
+        bonus,
+        deduction,
+        net_salary,
+        payroll_status
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        record["staff_id"],
+        record["staff_name"],
+        record["department"],
+        record["basic_salary"],
+        record["bonus"],
+        record["deduction"],
+        record["net_salary"],
+        "Generated"
+    ))
+
+    connection.commit()
+
+    connection.close()
+
+    print("\nPayroll Generated Successfully.")
+
+def view_payroll():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT * FROM payroll")
+
+    records = cursor.fetchall()
+
+    connection.close()
+
+    if not records:
+
+        print("No Payroll Found.")
+        return
+
+    print("=" * 60)
+    print("           PAYROLL HISTORY")
+    print("=" * 60)
+
+    for record in records:
+
+        print(f"Staff ID      : {record['staff_id']}")
+        print(f"Name          : {record['staff_name']}")
+        print(f"Department    : {record['department']}")
+        print(f"Basic Salary  : {record['basic_salary']}")
+        print(f"Bonus         : {record['bonus']}")
+        print(f"Deduction     : {record['deduction']}")
+        print(f"Net Salary    : {record['net_salary']}")
+        print(f"Status        : {record['payroll_status']}")
+        print("-" * 60)
+
+def search_payroll():
+
+    print("=" * 60)
+    print("          SEARCH PAYROLL")
+    print("=" * 60)
+
+    staff_id = input("Enter Staff ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM payroll WHERE staff_id = ?",
+        (staff_id,)
+    )
+
+    records = cursor.fetchall()
+
+    connection.close()
+
+    if not records:
+
+        print("Payroll Not Found.")
+        return
+
+    for record in records:
+
+        print(f"Staff ID      : {record['staff_id']}")
+        print(f"Name          : {record['staff_name']}")
+        print(f"Department    : {record['department']}")
+        print(f"Basic Salary  : {record['basic_salary']}")
+        print(f"Bonus         : {record['bonus']}")
+        print(f"Deduction     : {record['deduction']}")
+        print(f"Net Salary    : {record['net_salary']}")
+        print(f"Status        : {record['payroll_status']}")
+        print("-" * 60)
+
+def delete_payroll():
+
+    print("=" * 60)
+    print("          DELETE PAYROLL")
+    print("=" * 60)
+
+    staff_id = input("Enter Staff ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM payroll WHERE staff_id = ?",
+        (staff_id,)
+    )
+
+    record = cursor.fetchone()
+
+    if not record:
+
+        print("Payroll Not Found.")
+
+        connection.close()
+
+        return
+
+    cursor.execute(
+        "DELETE FROM payroll WHERE staff_id = ?",
+        (staff_id,)
+    )
+
+    connection.commit()
+
+    connection.close()
+
+    print("Payroll Deleted Successfully.")
     

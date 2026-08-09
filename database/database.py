@@ -3,6 +3,7 @@ from db_manager import (
     create_staff_table,
     create_attendance_table,
     create_salary_table,
+    create_payroll_table,
     get_all_customers
 )
 
@@ -10,6 +11,8 @@ create_customers_table()
 create_staff_table()
 create_attendance_table()
 create_salary_table()
+create_payroll_table()
+print("Payroll Table Ready.")
 
 customers = get_all_customers()
 
