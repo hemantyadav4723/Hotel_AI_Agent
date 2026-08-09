@@ -1,4 +1,15 @@
-from db_manager import get_all_customers
+from db_manager import (
+    create_customers_table,
+    create_staff_table,
+    create_attendance_table,
+    create_salary_table,
+    get_all_customers
+)
+
+create_customers_table()
+create_staff_table()
+create_attendance_table()
+create_salary_table()
 
 customers = get_all_customers()
 

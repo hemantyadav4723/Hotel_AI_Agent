@@ -4,15 +4,10 @@ from utils.date_time import current_datetime_object
 from database.db_manager import (
     get_next_staff_id,
     save_staff, view_staff, search_staff, update_staff, delete_staff, staff_check_in, staff_check_out, view_attendance,
-    search_attendance, monthly_attendance_report
+    search_attendance, monthly_attendance_report, save_salary, view_salary, search_salary, update_salary, delete_salary
 )
 
 from billing import (
-    save_salary,
-    view_salary,
-    search_salary,
-    update_salary,
-    delete_salary,
     generate_payroll,
     view_payroll,
     search_payroll,

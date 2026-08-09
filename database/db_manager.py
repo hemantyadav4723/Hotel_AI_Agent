@@ -693,3 +693,237 @@ def monthly_attendance_report():
     print("Absent Days   : Under Development")
     print("Working Hours : Under Development")
     print("-" * 60)
+
+def create_salary_table():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS salary(
+
+        salary_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        staff_id TEXT,
+        staff_name TEXT,
+        department TEXT,
+        basic_salary REAL,
+        bonus REAL,
+        deduction REAL,
+        net_salary REAL
+
+    )
+    """)
+
+    connection.commit()
+
+    connection.close()
+
+def save_salary(
+    staff_id,
+    staff_name,
+    department,
+    basic_salary,
+    bonus,
+    deduction,
+    net_salary
+):
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    INSERT INTO salary
+    (
+        staff_id,
+        staff_name,
+        department,
+        basic_salary,
+        bonus,
+        deduction,
+        net_salary
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (
+        staff_id,
+        staff_name,
+        department,
+        basic_salary,
+        bonus,
+        deduction,
+        net_salary
+    ))
+
+    connection.commit()
+
+    connection.close()
+
+def view_salary():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT * FROM salary")
+
+    records = cursor.fetchall()
+
+    connection.close()
+
+    if not records:
+
+        print("No Salary Record Found.")
+        return
+
+    print("=" * 60)
+    print("            SALARY LIST")
+    print("=" * 60)
+
+    for record in records:
+
+        print(f"Staff ID      : {record['staff_id']}")
+        print(f"Name          : {record['staff_name']}")
+        print(f"Department    : {record['department']}")
+        print(f"Basic Salary  : {record['basic_salary']}")
+        print(f"Bonus         : {record['bonus']}")
+        print(f"Deduction     : {record['deduction']}")
+        print(f"Net Salary    : {record['net_salary']}")
+        print("-" * 60)
+
+def search_salary():
+
+    print("=" * 60)
+    print("           SEARCH SALARY")
+    print("=" * 60)
+
+    staff_id = input("Enter Staff ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM salary WHERE staff_id = ?",
+        (staff_id,)
+    )
+
+    records = cursor.fetchall()
+
+    connection.close()
+
+    if not records:
+
+        print("Salary Record Not Found.")
+        return
+
+    for record in records:
+
+        print(f"Staff ID      : {record['staff_id']}")
+        print(f"Name          : {record['staff_name']}")
+        print(f"Department    : {record['department']}")
+        print(f"Basic Salary  : {record['basic_salary']}")
+        print(f"Bonus         : {record['bonus']}")
+        print(f"Deduction     : {record['deduction']}")
+        print(f"Net Salary    : {record['net_salary']}")
+        print("-" * 60)
+
+def update_salary():
+
+    print("=" * 60)
+    print("           UPDATE SALARY")
+    print("=" * 60)
+
+    staff_id = input("Enter Staff ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM salary WHERE staff_id = ?",
+        (staff_id,)
+    )
+
+    record = cursor.fetchone()
+
+    if not record:
+
+        print("Salary Record Not Found.")
+        connection.close()
+        return
+
+    print("\nSalary Record Found\n")
+
+    staff_name = input("Enter Staff Name : ")
+    department = input("Enter Department : ")
+
+    basic_salary = float(input("Enter Basic Salary : "))
+    bonus = float(input("Enter Bonus : "))
+    deduction = float(input("Enter Deduction : "))
+
+    net_salary = basic_salary + bonus - deduction
+
+    cursor.execute("""
+        UPDATE salary
+        SET
+            staff_name = ?,
+            department = ?,
+            basic_salary = ?,
+            bonus = ?,
+            deduction = ?,
+            net_salary = ?
+        WHERE staff_id = ?
+    """, (
+        staff_name,
+        department,
+        basic_salary,
+        bonus,
+        deduction,
+        net_salary,
+        staff_id
+    ))
+
+    connection.commit()
+    connection.close()
+
+    print("\nSalary Updated Successfully.")
+
+def delete_salary():
+
+    print("=" * 60)
+    print("           DELETE SALARY")
+    print("=" * 60)
+
+    staff_id = input("Enter Staff ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM salary WHERE staff_id = ?",
+        (staff_id,)
+    )
+
+    record = cursor.fetchone()
+
+    if not record:
+
+        print("Salary Record Not Found.")
+
+        connection.close()
+
+        return
+
+    cursor.execute(
+        "DELETE FROM salary WHERE staff_id = ?",
+        (staff_id,)
+    )
+
+    connection.commit()
+
+    connection.close()
+
+    print("\nSalary Deleted Successfully.")
+    
