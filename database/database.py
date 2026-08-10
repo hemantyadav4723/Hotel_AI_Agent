@@ -7,6 +7,8 @@ from db_manager import (
     create_department_table,
     create_orders_table,
     create_room_bookings_table,
+    create_rooms_table,
+    insert_default_rooms,
     get_all_customers
 )
 
@@ -18,8 +20,12 @@ create_payroll_table()
 create_department_table()
 create_orders_table()
 create_room_bookings_table()
+create_rooms_table()
+insert_default_rooms()
 print("Payroll Table Ready.")
 print("Room Booking Table Ready.")
+print("Rooms Table Ready.")
+print("Default Rooms Added.")
 
 customers = get_all_customers()
 

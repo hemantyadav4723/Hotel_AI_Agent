@@ -12,8 +12,6 @@ DATABASE_NAME = "hotel.db"
 
 def get_connection():
 
-    print("Database Path :", os.path.abspath(DATABASE_NAME))
-
     connection = sqlite3.connect(DATABASE_NAME)
 
     connection.row_factory = sqlite3.Row
@@ -1694,6 +1692,17 @@ def delete_room_booking():
     cursor = connection.cursor()
 
     cursor.execute(
+        "SELECT room_number FROM room_bookings WHERE booking_id = ?",
+        (booking_id,)
+    )
+
+    room = cursor.fetchone()
+
+    if room:
+
+        release_room(room["room_number"])
+
+    cursor.execute(
         "DELETE FROM room_bookings WHERE booking_id = ?",
         (booking_id,)
     )
@@ -1707,5 +1716,213 @@ def delete_room_booking():
     else:
 
         print("Booking Not Found.")
+
+    connection.close()
+
+def create_rooms_table():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS rooms(
+
+        room_number TEXT PRIMARY KEY,
+        room_type TEXT NOT NULL,
+        room_price REAL NOT NULL,
+        room_status TEXT NOT NULL
+
+    )
+    """)
+
+    connection.commit()
+
+    connection.close()
+
+def insert_default_rooms():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    rooms = [
+
+        ("101", "Standard", 1000, "Available"),
+        ("102", "Standard", 1000, "Available"),
+        ("103", "Standard", 1000, "Available"),
+
+        ("201", "Deluxe", 1800, "Available"),
+        ("202", "Deluxe", 1800, "Available"),
+        ("203", "Deluxe", 1800, "Available"),
+
+        ("301", "Suite", 3000, "Available"),
+        ("302", "Suite", 3000, "Available")
+
+    ]
+
+    cursor.executemany("""
+
+        INSERT OR IGNORE INTO rooms(
+
+            room_number,
+            room_type,
+            room_price,
+            room_status
+
+        )
+
+        VALUES(?,?,?,?)
+
+    """, rooms)
+
+    connection.commit()
+
+    connection.close()
+
+def view_rooms():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT * FROM rooms
+        ORDER BY room_number
+    """)
+
+    rooms = cursor.fetchall()
+
+    connection.close()
+
+    print("=" * 65)
+    print("                    HOTEL ROOMS")
+    print("=" * 65)
+
+    print(
+        f"{'Room':<10}"
+        f"{'Type':<15}"
+        f"{'Price':<15}"
+        f"{'Status':<15}"
+    )
+
+    print("-" * 65)
+
+    for room in rooms:
+
+        print(
+            f"{room['room_number']:<10}"
+            f"{room['room_type']:<15}"
+            f"₹{room['room_price']:<14}"
+            f"{room['room_status']:<15}"
+        )
+
+    print("=" * 65)
+
+def check_room_available(room_number):
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+
+        SELECT room_status
+        FROM rooms
+        WHERE room_number = ?
+
+    """, (room_number,))
+
+    room = cursor.fetchone()
+
+    connection.close()
+
+    if room is None:
+
+        return False
+
+    return room["room_status"] == "Available"
+
+def book_room(room_number):
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+
+        UPDATE rooms
+
+        SET room_status = ?
+
+        WHERE room_number = ?
+
+    """, ("Booked", room_number))
+
+    connection.commit()
+
+    connection.close()
+
+def get_all_rooms():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+
+        SELECT *
+
+        FROM rooms
+
+        ORDER BY room_number
+
+    """)
+
+    rooms = cursor.fetchall()
+
+    connection.close()
+
+    return rooms
+
+def get_room_by_number(room_number):
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+
+        SELECT *
+
+        FROM rooms
+
+        WHERE room_number = ?
+
+    """, (room_number,))
+
+    room = cursor.fetchone()
+
+    connection.close()
+
+    return room
+
+def release_room(room_number):
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+
+        UPDATE rooms
+
+        SET room_status = ?
+
+        WHERE room_number = ?
+
+    """, ("Available", room_number))
+
+    connection.commit()
 
     connection.close()
