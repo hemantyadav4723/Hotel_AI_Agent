@@ -1,4 +1,4 @@
-hotel_name=Yadav Hotel Alwar
+hotel_name=YADAV HOTEL
 hotel_owner=Sandeep Yadav
 hotel_type=Luxury Hotel
 hotel_established=2026

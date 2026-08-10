@@ -9,7 +9,9 @@ from db_manager import (
     create_room_bookings_table,
     create_rooms_table,
     insert_default_rooms,
-    get_all_customers
+    create_tables_table,
+    insert_default_tables,
+    create_table_bookings_table
 )
 
 create_customers_table()
@@ -22,21 +24,19 @@ create_orders_table()
 create_room_bookings_table()
 create_rooms_table()
 insert_default_rooms()
+create_tables_table()
+insert_default_tables()
+create_table_bookings_table()
+
+print("Table Booking Table Ready.")
+
 print("Payroll Table Ready.")
 print("Room Booking Table Ready.")
 print("Rooms Table Ready.")
 print("Default Rooms Added.")
-
-customers = get_all_customers()
-
-for customer in customers:
-    print(customer["customer_id"])
-    print(customer["customer_name"])
-    print(customer["customer_mobile"])
-    print(customer["customer_email"])
-    print(customer["customer_address"])
-    print(customer["created_time"])
-    print("-" * 40)
+print("Tables Table Ready.")
+print("Default Tables Ready")
+print("Order Table Ready.")
 
 from db_manager import get_connection
 
@@ -50,11 +50,8 @@ FROM sqlite_master
 WHERE type='table'
 """)
 
-tables = cursor.fetchall()
+for table in cursor.fetchall():
 
-for table in tables:
     print(table["name"])
 
 connection.close()
-
-print("Order Table Ready.")

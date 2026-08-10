@@ -1,5 +1,6 @@
 from restaurant import restaurant_menu
-from billing import view_table_bookings, search_table_booking,delete_table_booking
+from billing import *
+from database.db_manager import delete_table_booking, view_table_bookings, search_table_booking
 from room_booking import room_booking
 from table_booking import table_booking
 from customer import customer_management

@@ -146,3 +146,7 @@ def get_room_booking_customer_details():
         customer_email,
         customer_address
     )
+
+def get_table_booking_customer_details():
+
+    return get_room_booking_customer_details()

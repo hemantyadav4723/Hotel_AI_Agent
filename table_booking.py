@@ -1,6 +1,18 @@
-from data import table_menu
-from billing import is_table_booked, save_table_booking
-from datetime import datetime
+from database.db_manager import (
+    get_all_tables,
+    get_table_by_number,
+    check_table_available,
+    book_table,
+    save_table_booking
+)
+
+from utils.helpers import get_table_booking_customer_details
+from utils.validators import *
+from utils.display import *
+from utils.date_time import (
+    current_datetime_object,
+    generate_order_id
+)
 
 def table_booking():
 
@@ -10,36 +22,45 @@ def table_booking():
 
     print("\nAvailable Tables\n")
 
-    for table_no, details in table_menu.items():
+    tables = get_all_tables()
 
-        if is_table_booked(table_no):
+    for table in tables:
 
-            status = "❌ Booked"
-
-        else:
+        if table["table_status"] == "Available":
 
             status = "✅ Available"
 
+        else:
+
+            status = "❌ Booked"
+
         print(
-            f"Table : {table_no} | "
-            f"Capacity : {details['capacity']} Persons | "
+            f"Table : {table['table_number']} | "
+            f"Capacity : {table['table_capacity']} Persons | "
             f"Status : {status}"
         )
 
     print("-" * 50)
 
-    table_number = input("Enter Table Number : ").upper()
+    table_numbers = []
 
-    if table_number not in table_menu:
+    for table in tables:
 
-        print("Invalid Table Number")
-        input("\nPress Enter To Return...")
-        return
+        table_numbers.append(table["table_number"])
 
-    if is_table_booked(table_number):
+    table_number = validate_menu_choice(
+        "Enter Table Number : ",
+        table_numbers
+    )
 
-        print("Table Already Booked.")
-        input("\nPress Enter To Return...")
+    table = get_table_by_number(table_number)
+
+    if not check_table_available(table_number):
+
+        print_error("Table Already Booked.")
+
+        press_enter()
+
         return
 
     customer_name = input("Enter Customer Name : ")
@@ -70,9 +91,9 @@ def table_booking():
 
             print("Enter Numbers Only.")
 
-    booking_time = datetime.now()
+    booking_time = current_datetime_object()
 
-    booking_id = booking_time.strftime("%Y%m%d%H%M%S")
+    booking_id = generate_order_id()
 
     save_table_booking(
         booking_id,
@@ -82,6 +103,8 @@ def table_booking():
         table_number,
         persons
     )
+
+    book_table(table_number)
 
     print("\n" + "=" * 50)
     print("Table Booking Successful!")

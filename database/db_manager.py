@@ -1926,3 +1926,406 @@ def release_room(room_number):
     connection.commit()
 
     connection.close()
+
+def create_tables_table():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS tables(
+
+        table_number TEXT PRIMARY KEY,
+        table_capacity INTEGER NOT NULL,
+        table_status TEXT NOT NULL
+
+    )
+    """)
+
+    connection.commit()
+
+    connection.close()
+
+def insert_default_tables():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    tables = [
+
+        ("T1", 2, "Available"),
+        ("T2", 2, "Available"),
+
+        ("T3", 4, "Available"),
+        ("T4", 4, "Available"),
+
+        ("T5", 6, "Available"),
+        ("T6", 6, "Available"),
+
+        ("T7", 8, "Available"),
+        ("T8", 8, "Available")
+
+    ]
+
+    cursor.executemany("""
+
+        INSERT OR IGNORE INTO tables(
+
+            table_number,
+            table_capacity,
+            table_status
+
+        )
+
+        VALUES(?,?,?)
+
+    """, tables)
+
+    connection.commit()
+
+    connection.close()
+
+def view_tables():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+
+        SELECT *
+
+        FROM tables
+
+        ORDER BY table_number
+
+    """)
+
+    tables = cursor.fetchall()
+
+    connection.close()
+
+    print("=" * 65)
+    print("                  HOTEL TABLES")
+    print("=" * 65)
+
+    print(
+        f"{'Table':<12}"
+        f"{'Capacity':<15}"
+        f"{'Status':<15}"
+    )
+
+    print("-" * 65)
+
+    for table in tables:
+
+        print(
+            f"{table['table_number']:<12}"
+            f"{table['table_capacity']:<15}"
+            f"{table['table_status']:<15}"
+        )
+
+    print("=" * 65)
+
+def check_table_available(table_number):
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+
+        SELECT table_status
+
+        FROM tables
+
+        WHERE table_number = ?
+
+    """, (table_number,))
+
+    table = cursor.fetchone()
+
+    connection.close()
+
+    if table is None:
+
+        return False
+
+    return table["table_status"] == "Available"
+
+def book_table(table_number):
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+
+        UPDATE tables
+
+        SET table_status = ?
+
+        WHERE table_number = ?
+
+    """, ("Booked", table_number))
+
+    connection.commit()
+
+    connection.close()
+
+def release_table(table_number):
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+
+        UPDATE tables
+
+        SET table_status = ?
+
+        WHERE table_number = ?
+
+    """, ("Available", table_number))
+
+    connection.commit()
+
+    connection.close()
+
+def get_all_tables():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+
+        SELECT *
+
+        FROM tables
+
+        ORDER BY table_number
+
+    """)
+
+    tables = cursor.fetchall()
+
+    connection.close()
+
+    return tables
+
+def get_table_by_number(table_number):
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+
+        SELECT *
+
+        FROM tables
+
+        WHERE table_number = ?
+
+    """, (table_number,))
+
+    table = cursor.fetchone()
+
+    connection.close()
+
+    return table
+
+def save_table_booking(
+    booking_id,
+    booking_time,
+    customer_name,
+    customer_mobile,
+    table_number,
+    persons
+):
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+
+        INSERT INTO table_bookings(
+
+            booking_id,
+            booking_date,
+            booking_time,
+            customer_name,
+            customer_mobile,
+            table_number,
+            persons
+
+        )
+
+        VALUES(?,?,?,?,?,?,?)
+
+    """, (
+
+        booking_id,
+        booking_time.strftime("%d-%m-%Y"),
+        booking_time.strftime("%I:%M:%S %p"),
+        customer_name,
+        customer_mobile,
+        table_number,
+        persons
+
+    ))
+
+    connection.commit()
+
+    connection.close()
+
+def create_table_bookings_table():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+
+        CREATE TABLE IF NOT EXISTS table_bookings(
+
+            booking_id TEXT PRIMARY KEY,
+            booking_date TEXT,
+            booking_time TEXT,
+            customer_name TEXT,
+            customer_mobile TEXT,
+            table_number TEXT,
+            persons INTEGER
+
+        )
+
+    """)
+
+    connection.commit()
+
+    connection.close()
+
+def delete_table_booking():
+
+    print("=" * 50)
+    print("      DELETE TABLE BOOKING")
+    print("=" * 50)
+
+    booking_id = input("Enter Booking ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT table_number FROM table_bookings WHERE booking_id = ?",
+        (booking_id,)
+    )
+
+    booking = cursor.fetchone()
+
+    if booking:
+
+        table_number = booking["table_number"]
+
+        cursor.execute(
+            "DELETE FROM table_bookings WHERE booking_id = ?",
+            (booking_id,)
+        )
+
+        connection.commit()
+
+        release_table(table_number)
+
+        print("Table Booking Deleted Successfully.")
+
+    else:
+
+        print("Booking Not Found.")
+
+    connection.close()
+
+def view_table_bookings():
+
+    print("=" * 50)
+    print("      TABLE BOOKING HISTORY")
+    print("=" * 50)
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM table_bookings
+        ORDER BY booking_date DESC, booking_time DESC
+    """)
+
+    bookings = cursor.fetchall()
+
+    if bookings:
+
+        for booking in bookings:
+
+            print("=" * 50)
+            print("Booking ID   :", booking["booking_id"])
+            print("Date         :", booking["booking_date"])
+            print("Time         :", booking["booking_time"])
+            print("-" * 50)
+            print("Customer     :", booking["customer_name"])
+            print("Mobile       :", booking["customer_mobile"])
+            print("-" * 50)
+            print("Table Number :", booking["table_number"])
+            print("Persons      :", booking["persons"])
+            print("=" * 50)
+
+    else:
+
+        print("No Table Bookings Found.")
+
+    connection.close()
+
+def search_table_booking():
+
+    print("=" * 50)
+    print("      SEARCH TABLE BOOKING")
+    print("=" * 50)
+
+    booking_id = input("Enter Booking ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM table_bookings WHERE booking_id = ?",
+        (booking_id,)
+    )
+
+    booking = cursor.fetchone()
+
+    if booking:
+
+        print("=" * 50)
+        print("Booking ID   :", booking["booking_id"])
+        print("Date         :", booking["booking_date"])
+        print("Time         :", booking["booking_time"])
+        print("-" * 50)
+        print("Customer     :", booking["customer_name"])
+        print("Mobile       :", booking["customer_mobile"])
+        print("-" * 50)
+        print("Table Number :", booking["table_number"])
+        print("Persons      :", booking["persons"])
+        print("=" * 50)
+
+    else:
+
+        print("Booking Not Found.")
+
+    connection.close()
+    
