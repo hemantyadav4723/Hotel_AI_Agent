@@ -48,10 +48,13 @@ def table_booking():
 
         table_numbers.append(table["table_number"])
 
-    table_number = validate_menu_choice(
-        "Enter Table Number : ",
-        table_numbers
-    )
+    table_number = input(
+        "Enter Table Number (0 = Back) : "
+    ).strip().upper()
+
+    if table_number == "0":
+
+        return
 
     table = get_table_by_number(table_number)
 
@@ -81,15 +84,25 @@ def table_booking():
 
             persons = int(input("Enter Number Of Persons : "))
 
-            if persons > 0:
+            if persons <= 0:
 
-                break
+                print_error("Persons Must Be Greater Than 0.")
 
-            print("Persons Must Be Greater Than 0.")
+                continue
+
+            if persons > table["table_capacity"]:
+
+                print_error(
+                    f"Maximum Capacity Is {table['table_capacity']} Persons."
+                )
+
+                continue
+
+            break
 
         except ValueError:
 
-            print("Enter Numbers Only.")
+            print_error("Enter Numbers Only.")
 
     booking_time = current_datetime_object()
 

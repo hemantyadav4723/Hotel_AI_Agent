@@ -18,6 +18,12 @@ def validate_name(message):
             print_error("Name should contain only letters.")
             continue
 
+        if len(value.replace(" ", "")) < 3:
+
+            print_error("Name must contain at least 3 letters.")
+
+            continue
+
         return value.title()
 
 
@@ -321,12 +327,19 @@ def validate_table_number(message):
 
     while True:
 
-        table = input(message).strip()
+        table = input(message).strip().upper()
 
-        if table.isdigit() and int(table) > 0:
+        if (
+            table.startswith("T")
+            and table[1:].isdigit()
+            and int(table[1:]) > 0
+        ):
+
             return table
 
-        print_error("Invalid Table Number.")
+        print_error(
+            "Invalid Table Number. Example: T1, T2, T3"
+        )
 
 # ==========================================================
 # MENU CHOICE

@@ -45,10 +45,13 @@ def room_booking():
 
             room_numbers.append(room["room_number"])
 
-    room_choice = validate_menu_choice(
-        "Enter Room Number : ",
-        room_numbers
-        )
+    room_choice = input(
+         "Enter Room Number (0 = Back) : "
+    ).strip()
+
+    if room_choice == "0":
+
+        return
 
     room = get_room_by_number(room_choice)
 
