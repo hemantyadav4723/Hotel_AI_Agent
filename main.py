@@ -15,6 +15,51 @@ from hotel_information import hotel_information
 from data import *
 from database.db_manager import view_orders, search_order, delete_order
 from database.db_manager import view_room_bookings, search_room_booking, delete_room_booking
+from database.db_manager import (
+    create_customers_table,
+    create_staff_table,
+    create_attendance_table,
+    create_salary_table,
+    create_payroll_table,
+    create_department_table,
+    create_orders_table,
+    create_room_bookings_table,
+    create_rooms_table,
+    insert_default_rooms,
+    create_tables_table,
+    insert_default_tables,
+    create_table_bookings_table,
+    create_expenses_table,
+    create_feedback_table,
+    create_users_table,
+    create_settings_table,
+    create_inventory_table,
+    create_supplier_table,
+    create_hotel_information_table,
+    initialize_hotel_information
+)
+
+create_customers_table()
+create_staff_table()
+create_attendance_table()
+create_salary_table()
+create_payroll_table()
+create_department_table()
+create_orders_table()
+create_room_bookings_table()
+create_rooms_table()
+create_tables_table()
+create_table_bookings_table()
+insert_default_rooms()
+insert_default_tables()
+create_expenses_table()
+create_feedback_table()
+create_users_table()
+create_settings_table()
+create_inventory_table()
+create_supplier_table()
+create_hotel_information_table()
+initialize_hotel_information()
 
 while True:
 
@@ -171,39 +216,3 @@ while True:
 
     else:
         print("Invalid Choice")
-
-def monthly_attendance_report():
-
-    print("=" * 60)
-    print("        MONTHLY ATTENDANCE REPORT")
-    print("=" * 60)
-
-    staff_id = input("Enter Staff ID : ").upper()
-
-    total_present = 0
-
-    try:
-
-        with open("attendance.txt", "r", encoding="utf-8") as file:
-
-            records = file.read().split("=" * 60)
-
-        for record in records:
-
-            if record.strip() == "":
-                continue
-
-            if f"Staff ID : {staff_id}" in record:
-
-                total_present += 1
-
-        print("-" * 60)
-        print("Staff ID      :", staff_id)
-        print("Present Days  :", total_present)
-        print("Absent Days   : Under Development")
-        print("Working Hours : Under Development")
-        print("-" * 60)
-
-    except FileNotFoundError:
-
-        print("attendance.txt File Not Found.")

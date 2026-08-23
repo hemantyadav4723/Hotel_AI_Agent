@@ -1,6 +1,7 @@
-from billing import *
 from utils.validators import *
 from utils.display import *
+
+from database.db_manager import save_feedback, view_feedback, search_feedback, delete_feedback
 
 def feedback_management():
 

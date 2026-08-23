@@ -2075,6 +2075,31 @@ def book_table(table_number):
 
     connection.close()
 
+def is_table_booked(table_number):
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        SELECT status
+        FROM tables
+        WHERE table_number = ?
+        """,
+        (table_number,)
+    )
+
+    table = cursor.fetchone()
+
+    connection.close()
+
+    if table and table["status"] == "Booked":
+
+        return True
+
+    return False
+
 def release_table(table_number):
 
     connection = get_connection()
@@ -2328,4 +2353,1888 @@ def search_table_booking():
         print("Booking Not Found.")
 
     connection.close()
-    
+
+def create_table_bookings_table():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS table_bookings(
+
+        booking_id TEXT PRIMARY KEY,
+        booking_date TEXT,
+        booking_time TEXT,
+        customer_name TEXT,
+        customer_mobile TEXT,
+        table_number TEXT,
+        persons INTEGER
+
+    )
+    """)
+
+    connection.commit()
+
+    connection.close()
+
+def create_hotel_information_table():
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS hotel_information(
+
+        id INTEGER PRIMARY KEY,
+
+        hotel_name TEXT,
+        hotel_owner TEXT,
+        hotel_type TEXT,
+        hotel_established TEXT,
+        hotel_description TEXT,
+
+        hotel_address TEXT,
+        hotel_city TEXT,
+        hotel_state TEXT,
+        hotel_country TEXT,
+        hotel_pincode TEXT,
+
+        hotel_mobile TEXT,
+        hotel_email TEXT,
+        hotel_website TEXT,
+        hotel_rating TEXT,
+
+        total_rooms INTEGER,
+
+        restaurant TEXT,
+        parking TEXT,
+        wifi TEXT,
+        laundry TEXT,
+
+        hotel_checkin_time TEXT,
+        hotel_checkout_time TEXT,
+        hotel_opening TEXT,
+        hotel_closing TEXT,
+
+        hotel_currency TEXT,
+        hotel_support_email TEXT,
+        hotel_support_mobile TEXT
+
+    )
+    """)
+
+    connection.commit()
+    connection.close()
+
+def save_hotel_information(
+    hotel_name,
+    hotel_owner,
+    hotel_type,
+    hotel_established,
+    hotel_description,
+    hotel_address,
+    hotel_city,
+    hotel_state,
+    hotel_country,
+    hotel_pincode,
+    hotel_mobile,
+    hotel_email,
+    hotel_website,
+    hotel_rating,
+    total_rooms,
+    restaurant,
+    parking,
+    wifi,
+    laundry,
+    hotel_checkin_time,
+    hotel_checkout_time,
+    hotel_opening,
+    hotel_closing,
+    hotel_currency,
+    hotel_support_email,
+    hotel_support_mobile
+):
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    INSERT OR REPLACE INTO hotel_information(
+        id,
+        hotel_name,
+        hotel_owner,
+        hotel_type,
+        hotel_established,
+        hotel_description,
+        hotel_address,
+        hotel_city,
+        hotel_state,
+        hotel_country,
+        hotel_pincode,
+        hotel_mobile,
+        hotel_email,
+        hotel_website,
+        hotel_rating,
+        total_rooms,
+        restaurant,
+        parking,
+        wifi,
+        laundry,
+        hotel_checkin_time,
+        hotel_checkout_time,
+        hotel_opening,
+        hotel_closing,
+        hotel_currency,
+        hotel_support_email,
+        hotel_support_mobile
+    )
+    VALUES(
+        1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+    )
+    """, (
+        hotel_name,
+        hotel_owner,
+        hotel_type,
+        hotel_established,
+        hotel_description,
+        hotel_address,
+        hotel_city,
+        hotel_state,
+        hotel_country,
+        hotel_pincode,
+        hotel_mobile,
+        hotel_email,
+        hotel_website,
+        hotel_rating,
+        total_rooms,
+        restaurant,
+        parking,
+        wifi,
+        laundry,
+        hotel_checkin_time,
+        hotel_checkout_time,
+        hotel_opening,
+        hotel_closing,
+        hotel_currency,
+        hotel_support_email,
+        hotel_support_mobile
+    ))
+
+    connection.commit()
+    connection.close()
+
+def initialize_hotel_information():
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT COUNT(*) FROM hotel_information
+    """)
+
+    count = cursor.fetchone()[0]
+
+    connection.close()
+
+    if count > 0:
+        return
+
+    save_hotel_information(
+        "YADAV HOTEL",
+        "Sandeep Yadav",
+        "Luxury Hotel",
+        "2026",
+        "Premium Hotel with Restaurant, Rooms and Banquet",
+        "Alwar, Rajasthan",
+        "Alwar",
+        "Rajasthan",
+        "India",
+        "301001",
+        "9876543210",
+        "info@yadavhotel.com",
+        "www.yadavhotel.com",
+        "4.8/5",
+        50,
+        "Available",
+        "Available",
+        "Available",
+        "Available",
+        "12:00 PM",
+        "11:00 AM",
+        "08:00 AM",
+        "11:00 PM",
+        "INR",
+        "support@yadavhotel.com",
+        "9876543210"
+    )
+
+def get_hotel_information():
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM hotel_information WHERE id = 1"
+    )
+
+    hotel = cursor.fetchone()
+
+    connection.close()
+
+    return hotel
+
+def update_hotel_information(
+    hotel_name,
+    hotel_owner,
+    hotel_type,
+    hotel_established,
+    hotel_description,
+    hotel_address,
+    hotel_city,
+    hotel_state,
+    hotel_country,
+    hotel_pincode,
+    hotel_mobile,
+    hotel_email,
+    hotel_website,
+    hotel_rating,
+    total_rooms,
+    restaurant,
+    parking,
+    wifi,
+    laundry,
+    hotel_checkin_time,
+    hotel_checkout_time,
+    hotel_opening,
+    hotel_closing,
+    hotel_currency,
+    hotel_support_email,
+    hotel_support_mobile
+):
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        UPDATE hotel_information
+        SET
+            hotel_name = ?,
+            hotel_owner = ?,
+            hotel_type = ?,
+            hotel_established = ?,
+            hotel_description = ?,
+            hotel_address = ?,
+            hotel_city = ?,
+            hotel_state = ?,
+            hotel_country = ?,
+            hotel_pincode = ?,
+            hotel_mobile = ?,
+            hotel_email = ?,
+            hotel_website = ?,
+            hotel_rating = ?,
+            total_rooms = ?,
+            restaurant = ?,
+            parking = ?,
+            wifi = ?,
+            laundry = ?,
+            hotel_checkin_time = ?,
+            hotel_checkout_time = ?,
+            hotel_opening = ?,
+            hotel_closing = ?,
+            hotel_currency = ?,
+            hotel_support_email = ?,
+            hotel_support_mobile = ?
+        WHERE id = 1
+    """, (
+        hotel_name,
+        hotel_owner,
+        hotel_type,
+        hotel_established,
+        hotel_description,
+        hotel_address,
+        hotel_city,
+        hotel_state,
+        hotel_country,
+        hotel_pincode,
+        hotel_mobile,
+        hotel_email,
+        hotel_website,
+        hotel_rating,
+        total_rooms,
+        restaurant,
+        parking,
+        wifi,
+        laundry,
+        hotel_checkin_time,
+        hotel_checkout_time,
+        hotel_opening,
+        hotel_closing,
+        hotel_currency,
+        hotel_support_email,
+        hotel_support_mobile
+    ))
+
+    connection.commit()
+    connection.close()
+
+def is_room_booked(room_number):
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        SELECT status
+        FROM rooms
+        WHERE room_number = ?
+        """,
+        (room_number,)
+    )
+
+    room = cursor.fetchone()
+
+    connection.close()
+
+    if room and room["status"] == "Booked":
+
+        return True
+
+    return False
+
+def create_expenses_table():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS expenses(
+
+        expense_id TEXT PRIMARY KEY,
+        expense_date TEXT,
+        expense_time TEXT,
+        expense_name TEXT,
+        amount REAL,
+        category TEXT,
+        description TEXT
+
+    )
+    """)
+
+    connection.commit()
+
+    connection.close()
+
+def save_expense(
+    expense_id,
+    expense_date,
+    expense_time,
+    expense_name,
+    amount,
+    category,
+    description
+):
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    INSERT INTO expenses(
+
+        expense_id,
+        expense_date,
+        expense_time,
+        expense_name,
+        amount,
+        category,
+        description
+
+    )
+
+    VALUES(?, ?, ?, ?, ?, ?, ?)
+    """,
+
+    (
+        expense_id,
+        expense_date,
+        expense_time,
+        expense_name,
+        amount,
+        category,
+        description
+    ))
+
+    connection.commit()
+
+    connection.close()
+
+def view_expenses():
+
+    print("=" * 50)
+    print("          EXPENSE HISTORY")
+    print("=" * 50)
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM expenses
+        ORDER BY expense_date DESC, expense_time DESC
+    """)
+
+    expenses = cursor.fetchall()
+
+    if expenses:
+
+        for expense in expenses:
+
+            print("=" * 50)
+            print("Expense ID  :", expense["expense_id"])
+            print("Date        :", expense["expense_date"])
+            print("Time        :", expense["expense_time"])
+            print("-" * 50)
+            print("Name        :", expense["expense_name"])
+            print("Amount      :", expense["amount"])
+            print("Category    :", expense["category"])
+            print("Description :", expense["description"])
+            print("=" * 50)
+
+    else:
+
+        print("No Expenses Found.")
+
+    connection.close()
+
+def search_expense():
+
+    print("=" * 50)
+    print("         SEARCH EXPENSE")
+    print("=" * 50)
+
+    expense_id = input("Enter Expense ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM expenses WHERE expense_id = ?",
+        (expense_id,)
+    )
+
+    expense = cursor.fetchone()
+
+    if expense:
+
+        print("=" * 50)
+        print("Expense ID  :", expense["expense_id"])
+        print("Date        :", expense["expense_date"])
+        print("Time        :", expense["expense_time"])
+        print("-" * 50)
+        print("Name        :", expense["expense_name"])
+        print("Amount      :", expense["amount"])
+        print("Category    :", expense["category"])
+        print("Description :", expense["description"])
+        print("=" * 50)
+
+    else:
+
+        print("Expense Not Found.")
+
+    connection.close()
+
+def update_expense():
+
+    print("=" * 50)
+    print("         UPDATE EXPENSE")
+    print("=" * 50)
+
+    expense_id = input("Enter Expense ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM expenses WHERE expense_id = ?",
+        (expense_id,)
+    )
+
+    expense = cursor.fetchone()
+
+    if expense:
+
+        expense_name = input(
+            f"Expense Name ({expense['expense_name']}) : "
+        ) or expense["expense_name"]
+
+        amount = input(
+            f"Amount ({expense['amount']}) : "
+        ) or expense["amount"]
+
+        category = input(
+            f"Category ({expense['category']}) : "
+        ) or expense["category"]
+
+        description = input(
+            f"Description ({expense['description']}) : "
+        ) or expense["description"]
+
+        cursor.execute("""
+        UPDATE expenses
+        SET
+            expense_name = ?,
+            amount = ?,
+            category = ?,
+            description = ?
+        WHERE expense_id = ?
+        """,
+        (
+            expense_name,
+            amount,
+            category,
+            description,
+            expense_id
+        ))
+
+        connection.commit()
+
+        print("Expense Updated Successfully.")
+
+    else:
+
+        print("Expense Not Found.")
+
+    connection.close()
+
+def delete_expense():
+
+    print("=" * 50)
+    print("         DELETE EXPENSE")
+    print("=" * 50)
+
+    expense_id = input("Enter Expense ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM expenses WHERE expense_id = ?",
+        (expense_id,)
+    )
+
+    expense = cursor.fetchone()
+
+    if expense:
+
+        cursor.execute(
+            "DELETE FROM expenses WHERE expense_id = ?",
+            (expense_id,)
+        )
+
+        connection.commit()
+
+        print("Expense Deleted Successfully.")
+
+    else:
+
+        print("Expense Not Found.")
+
+    connection.close()
+
+def create_feedback_table():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS feedback(
+
+        feedback_id TEXT PRIMARY KEY,
+        customer_name TEXT,
+        customer_mobile TEXT,
+        rating INTEGER,
+        feedback TEXT,
+        feedback_date TEXT,
+        feedback_time TEXT
+
+    )
+    """)
+
+    connection.commit()
+
+    connection.close()
+
+def save_feedback(
+    feedback_id,
+    customer_name,
+    mobile,
+    rating,
+    review
+):
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    INSERT INTO feedback(
+
+        feedback_id,
+        customer_name,
+        customer_mobile,
+        rating,
+        feedback
+
+    )
+
+    VALUES(?, ?, ?, ?, ?)
+    """,
+
+    (
+        feedback_id,
+        customer_name,
+        mobile,
+        rating,
+        review
+    ))
+
+    connection.commit()
+
+    connection.close()
+
+def view_feedback():
+
+    print("=" * 60)
+    print("              FEEDBACK HISTORY")
+    print("=" * 60)
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM feedback
+        ORDER BY feedback_id
+    """)
+
+    feedbacks = cursor.fetchall()
+
+    if feedbacks:
+
+        for feedback in feedbacks:
+
+            print("=" * 60)
+            print("Feedback ID   :", feedback["feedback_id"])
+            print("Customer Name :", feedback["customer_name"])
+            print("Mobile        :", feedback["customer_mobile"])
+            print("Rating        :", feedback["rating"])
+            print("Review        :", feedback["feedback"])
+            print("=" * 60)
+
+    else:
+
+        print("No Feedback Found.")
+
+    connection.close()
+
+def search_feedback():
+
+    print("=" * 60)
+    print("             SEARCH FEEDBACK")
+    print("=" * 60)
+
+    feedback_id = input("Enter Feedback ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM feedback WHERE feedback_id = ?",
+        (feedback_id,)
+    )
+
+    feedback = cursor.fetchone()
+
+    if feedback:
+
+        print("=" * 60)
+        print("Feedback ID   :", feedback["feedback_id"])
+        print("Customer Name :", feedback["customer_name"])
+        print("Mobile        :", feedback["customer_mobile"])
+        print("Rating        :", feedback["rating"])
+        print("Review        :", feedback["feedback"])
+        print("=" * 60)
+
+    else:
+
+        print("Feedback Not Found.")
+
+    connection.close()
+
+def delete_feedback():
+
+    print("=" * 60)
+    print("             DELETE FEEDBACK")
+    print("=" * 60)
+
+    feedback_id = input("Enter Feedback ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM feedback WHERE feedback_id = ?",
+        (feedback_id,)
+    )
+
+    feedback = cursor.fetchone()
+
+    if feedback:
+
+        cursor.execute(
+            "DELETE FROM feedback WHERE feedback_id = ?",
+            (feedback_id,)
+        )
+
+        connection.commit()
+
+        print("Feedback Deleted Successfully.")
+
+    else:
+
+        print("Feedback Not Found.")
+
+    connection.close()
+
+def create_users_table():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users(
+
+        user_id TEXT PRIMARY KEY,
+        username TEXT UNIQUE,
+        password TEXT,
+        role TEXT
+
+    )
+    """)
+
+    connection.commit()
+
+    connection.close()
+
+def save_user(
+    user_id,
+    username,
+    password,
+    role
+):
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    INSERT INTO users(
+
+        user_id,
+        username,
+        password,
+        role
+
+    )
+
+    VALUES(?, ?, ?, ?)
+    """,
+
+    (
+        user_id,
+        username,
+        password,
+        role
+    ))
+
+    connection.commit()
+
+    connection.close()
+
+def view_users():
+
+    print("=" * 60)
+    print("              USERS LIST")
+    print("=" * 60)
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM users
+        ORDER BY user_id
+    """)
+
+    users = cursor.fetchall()
+
+    if users:
+
+        for user in users:
+
+            print("=" * 60)
+            print("User ID  :", user["user_id"])
+            print("Username :", user["username"])
+            print("Role     :", user["role"])
+            print("=" * 60)
+
+    else:
+
+        print("No Users Found.")
+
+    connection.close()
+
+def delete_user():
+
+    print("=" * 60)
+    print("             DELETE USER")
+    print("=" * 60)
+
+    user_id = input("Enter User ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM users WHERE user_id = ?",
+        (user_id,)
+    )
+
+    user = cursor.fetchone()
+
+    if user:
+
+        cursor.execute(
+            "DELETE FROM users WHERE user_id = ?",
+            (user_id,)
+        )
+
+        connection.commit()
+
+        print("User Deleted Successfully.")
+
+    else:
+
+        print("User Not Found.")
+
+    connection.close()
+
+def verify_login(username, password):
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        SELECT *
+        FROM users
+        WHERE username = ? AND password = ?
+        """,
+        (username, password)
+    )
+
+    user = cursor.fetchone()
+
+    connection.close()
+
+    if user:
+
+        print(f"Welcome {user['username']} ({user['role']})")
+
+    else:
+
+        print("Invalid Username or Password.")
+
+def create_settings_table():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS settings(
+
+        id INTEGER PRIMARY KEY CHECK(id = 1),
+        hotel_name TEXT,
+        owner_name TEXT,
+        gst TEXT,
+        phone TEXT,
+        email TEXT
+
+    )
+    """)
+
+    connection.commit()
+
+    connection.close()
+
+def save_settings(
+    hotel_name,
+    owner_name,
+    gst,
+    phone,
+    email
+):
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    INSERT OR REPLACE INTO settings(
+
+        id,
+        hotel_name,
+        owner_name,
+        gst,
+        phone,
+        email
+
+    )
+
+    VALUES(1, ?, ?, ?, ?, ?)
+    """,
+
+    (
+        hotel_name,
+        owner_name,
+        gst,
+        phone,
+        email
+    ))
+
+    connection.commit()
+
+    connection.close()
+
+    print("Settings Saved Successfully.")
+
+def view_settings():
+
+    print("=" * 60)
+    print("            HOTEL SETTINGS")
+    print("=" * 60)
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT * FROM settings WHERE id = 1")
+
+    settings = cursor.fetchone()
+
+    if settings:
+
+        print("Hotel Name :", settings["hotel_name"])
+        print("Owner Name :", settings["owner_name"])
+        print("GST Number :", settings["gst"])
+        print("Phone      :", settings["phone"])
+        print("Email      :", settings["email"])
+
+    else:
+
+        print("Settings Not Found.")
+
+    connection.close()
+
+def create_inventory_table():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS inventory(
+
+        item_id TEXT PRIMARY KEY,
+        item_name TEXT,
+        category TEXT,
+        quantity INTEGER,
+        price REAL
+
+    )
+    """)
+
+    connection.commit()
+
+    connection.close()
+
+def create_supplier_table():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS suppliers(
+
+        supplier_id TEXT PRIMARY KEY,
+        supplier_name TEXT,
+        mobile TEXT
+
+    )
+    """)
+
+    connection.commit()
+
+    connection.close()
+
+def save_item(
+    item_id,
+    item_name,
+    category,
+    quantity,
+    price
+):
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    INSERT INTO inventory(
+
+        item_id,
+        item_name,
+        category,
+        quantity,
+        price
+
+    )
+
+    VALUES(?, ?, ?, ?, ?)
+    """,
+
+    (
+        item_id,
+        item_name,
+        category,
+        quantity,
+        price
+    ))
+
+    connection.commit()
+
+    connection.close()
+
+def view_items():
+
+    print("=" * 60)
+    print("              INVENTORY")
+    print("=" * 60)
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM inventory
+        ORDER BY item_name
+    """)
+
+    items = cursor.fetchall()
+
+    if items:
+
+        for item in items:
+
+            print("=" * 60)
+            print("Item ID   :", item["item_id"])
+            print("Item Name :", item["item_name"])
+            print("Category  :", item["category"])
+            print("Quantity  :", item["quantity"])
+            print("Price     :", item["price"])
+            print("=" * 60)
+
+    else:
+
+        print("No Items Found.")
+
+    connection.close()
+
+def search_item():
+
+    item_id = input("Enter Item ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM inventory WHERE item_id = ?",
+        (item_id,)
+    )
+
+    item = cursor.fetchone()
+
+    if item:
+
+        print("=" * 60)
+        print("Item ID   :", item["item_id"])
+        print("Item Name :", item["item_name"])
+        print("Category  :", item["category"])
+        print("Quantity  :", item["quantity"])
+        print("Price     :", item["price"])
+        print("=" * 60)
+
+    else:
+
+        print("Item Not Found.")
+
+    connection.close()
+
+def update_item():
+
+    item_id = input("Enter Item ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM inventory WHERE item_id = ?",
+        (item_id,)
+    )
+
+    item = cursor.fetchone()
+
+    if item:
+
+        item_name = input(f"Item Name ({item['item_name']}) : ") or item["item_name"]
+
+        category = input(f"Category ({item['category']}) : ") or item["category"]
+
+        quantity = input(f"Quantity ({item['quantity']}) : ") or item["quantity"]
+
+        price = input(f"Price ({item['price']}) : ") or item["price"]
+
+        cursor.execute("""
+        UPDATE inventory
+        SET
+            item_name = ?,
+            category = ?,
+            quantity = ?,
+            price = ?
+        WHERE item_id = ?
+        """,
+        (
+            item_name,
+            category,
+            quantity,
+            price,
+            item_id
+        ))
+
+        connection.commit()
+
+        print("Item Updated Successfully.")
+
+    else:
+
+        print("Item Not Found.")
+
+    connection.close()
+
+def delete_item():
+
+    item_id = input("Enter Item ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM inventory WHERE item_id = ?",
+        (item_id,)
+    )
+
+    item = cursor.fetchone()
+
+    if item:
+
+        cursor.execute(
+            "DELETE FROM inventory WHERE item_id = ?",
+            (item_id,)
+        )
+
+        connection.commit()
+
+        print("Item Deleted Successfully.")
+
+    else:
+
+        print("Item Not Found.")
+
+    connection.close()
+
+def stock_in(item_id, quantity):
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        UPDATE inventory
+        SET quantity = quantity + ?
+        WHERE item_id = ?
+        """,
+        (quantity, item_id)
+    )
+
+    if cursor.rowcount == 0:
+        print("Item Not Found.")
+    else:
+        connection.commit()
+        print("Stock Added Successfully.")
+
+    connection.close()
+
+def stock_out(item_id, quantity):
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        UPDATE inventory
+        SET quantity = quantity - ?
+        WHERE item_id = ?
+        AND quantity >= ?
+        """,
+        (quantity, item_id, quantity)
+    )
+
+    if cursor.rowcount == 0:
+        print("Item Not Found or Insufficient Stock.")
+    else:
+        connection.commit()
+        print("Stock Removed Successfully.")
+
+    connection.close()
+
+def low_stock_alert():
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT item_id, item_name, quantity
+        FROM inventory
+        WHERE quantity <= 10
+        ORDER BY quantity ASC
+    """)
+
+    items = cursor.fetchall()
+
+    print("=" * 60)
+    print("           LOW STOCK ALERT")
+    print("=" * 60)
+
+    if items:
+        for item in items:
+            print(
+                f"{item['item_id']} | "
+                f"{item['item_name']} | "
+                f"Stock : {item['quantity']}"
+            )
+    else:
+        print("No Low Stock Items.")
+
+    connection.close()
+
+def purchase_history():
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT
+            item_id,
+            item_name,
+            category,
+            quantity,
+            price
+        FROM inventory
+        ORDER BY item_id
+    """)
+
+    items = cursor.fetchall()
+
+    print("=" * 60)
+    print("         PURCHASE HISTORY")
+    print("=" * 60)
+
+    if items:
+        for item in items:
+            print("=" * 60)
+            print("Item ID   :", item["item_id"])
+            print("Item Name :", item["item_name"])
+            print("Category  :", item["category"])
+            print("Quantity  :", item["quantity"])
+            print("Price     :", item["price"])
+            print("=" * 60)
+    else:
+        print("No Purchase History Found.")
+
+    connection.close()
+
+def save_supplier(
+    supplier_id,
+    supplier_name,
+    mobile
+):
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    INSERT INTO suppliers(
+
+        supplier_id,
+        supplier_name,
+        mobile
+
+    )
+
+    VALUES(?, ?, ?)
+    """,
+
+    (
+        supplier_id,
+        supplier_name,
+        mobile
+    ))
+
+    connection.commit()
+
+    connection.close()
+
+def view_supplier():
+
+    print("=" * 60)
+    print("          SUPPLIERS")
+    print("=" * 60)
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM suppliers
+        ORDER BY supplier_name
+    """)
+
+    suppliers = cursor.fetchall()
+
+    if suppliers:
+
+        for supplier in suppliers:
+
+            print("=" * 60)
+            print("Supplier ID   :", supplier["supplier_id"])
+            print("Supplier Name :", supplier["supplier_name"])
+            print("Mobile        :", supplier["mobile"])
+            print("=" * 60)
+
+    else:
+
+        print("No Suppliers Found.")
+
+    connection.close()
+
+def search_supplier():
+
+    supplier_id = input("Enter Supplier ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM suppliers WHERE supplier_id = ?",
+        (supplier_id,)
+    )
+
+    supplier = cursor.fetchone()
+
+    if supplier:
+
+        print("=" * 60)
+        print("Supplier ID   :", supplier["supplier_id"])
+        print("Supplier Name :", supplier["supplier_name"])
+        print("Mobile        :", supplier["mobile"])
+        print("=" * 60)
+
+    else:
+
+        print("Supplier Not Found.")
+
+    connection.close()
+
+def update_supplier():
+
+    supplier_id = input("Enter Supplier ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM suppliers WHERE supplier_id = ?",
+        (supplier_id,)
+    )
+
+    supplier = cursor.fetchone()
+
+    if supplier:
+
+        supplier_name = input(
+            f"Supplier Name ({supplier['supplier_name']}) : "
+        ) or supplier["supplier_name"]
+
+        mobile = input(
+            f"Mobile ({supplier['mobile']}) : "
+        ) or supplier["mobile"]
+
+        cursor.execute("""
+        UPDATE suppliers
+        SET
+            supplier_name = ?,
+            mobile = ?
+        WHERE supplier_id = ?
+        """,
+        (
+            supplier_name,
+            mobile,
+            supplier_id
+        ))
+
+        connection.commit()
+
+        print("Supplier Updated Successfully.")
+
+    else:
+
+        print("Supplier Not Found.")
+
+    connection.close()
+
+def delete_supplier():
+
+    supplier_id = input("Enter Supplier ID : ").upper()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM suppliers WHERE supplier_id = ?",
+        (supplier_id,)
+    )
+
+    supplier = cursor.fetchone()
+
+    if supplier:
+
+        cursor.execute(
+            "DELETE FROM suppliers WHERE supplier_id = ?",
+            (supplier_id,)
+        )
+
+        connection.commit()
+
+        print("Supplier Deleted Successfully.")
+
+    else:
+
+        print("Supplier Not Found.")
+
+    connection.close()
+
+def sales_report():
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM orders
+        ORDER BY order_id DESC
+    """)
+
+    orders = cursor.fetchall()
+
+    print("=" * 60)
+    print("              SALES REPORT")
+    print("=" * 60)
+
+    if not orders:
+        print("No Sales Found.")
+        connection.close()
+        return
+
+    for order in orders:
+        print("-" * 60)
+
+        for key in order.keys():
+            print(f"{key.replace('_', ' ').title()} : {order[key]}")
+
+    print("=" * 60)
+
+    connection.close()
+
+def restaurant_report():
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT
+            order_id,
+            order_date,
+            order_time,
+            customer_name,
+            customer_mobile,
+            table_number,
+            cart
+        FROM orders
+        ORDER BY order_id DESC
+    """)
+
+    orders = cursor.fetchall()
+
+    print("=" * 60)
+    print("             RESTAURANT REPORT")
+    print("=" * 60)
+
+    if not orders:
+        print("No Restaurant Orders Found.")
+        connection.close()
+        return
+
+    for order in orders:
+
+        print("-" * 60)
+        print("Order ID       :", order["order_id"])
+        print("Date           :", order["order_date"])
+        print("Time           :", order["order_time"])
+        print("Customer Name  :", order["customer_name"])
+        print("Mobile         :", order["customer_mobile"])
+        print("Table Number   :", order["table_number"])
+        print("Cart           :", order["cart"])
+
+    print("=" * 60)
+
+    connection.close()
+
+def room_report():
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM room_bookings
+        ORDER BY booking_id DESC
+    """)
+
+    bookings = cursor.fetchall()
+
+    print("=" * 60)
+    print("           ROOM BOOKING REPORT")
+    print("=" * 60)
+
+    if not bookings:
+        print("No Room Bookings Found.")
+        connection.close()
+        return
+
+    for booking in bookings:
+
+        print("-" * 60)
+
+        for key in booking.keys():
+            print(
+                f"{key.replace('_', ' ').title()} : "
+                f"{booking[key]}"
+            )
+
+    print("=" * 60)
+
+    connection.close()
+
+def table_report():
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM table_bookings
+        ORDER BY booking_id DESC
+    """)
+
+    bookings = cursor.fetchall()
+
+    print("=" * 60)
+    print("          TABLE BOOKING REPORT")
+    print("=" * 60)
+
+    if not bookings:
+        print("No Table Bookings Found.")
+        connection.close()
+        return
+
+    for booking in bookings:
+
+        print("-" * 60)
+
+        for key in booking.keys():
+            print(
+                f"{key.replace('_', ' ').title()} : "
+                f"{booking[key]}"
+            )
+
+    print("=" * 60)
+
+    connection.close()
+
+def customer_report():
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM customers
+        ORDER BY customer_id DESC
+    """)
+
+    customers = cursor.fetchall()
+
+    print("=" * 60)
+    print("             CUSTOMER REPORT")
+    print("=" * 60)
+
+    if not customers:
+        print("No Customers Found.")
+        connection.close()
+        return
+
+    for customer in customers:
+
+        print("-" * 60)
+
+        for key in customer.keys():
+            print(
+                f"{key.replace('_', ' ').title()} : "
+                f"{customer[key]}"
+            )
+
+    print("=" * 60)
+
+    connection.close()
+
+def staff_report():
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM staff
+        ORDER BY staff_id DESC
+    """)
+
+    staff_records = cursor.fetchall()
+
+    print("=" * 60)
+    print("              STAFF REPORT")
+    print("=" * 60)
+
+    if not staff_records:
+        print("No Staff Found.")
+        connection.close()
+        return
+
+    for staff in staff_records:
+
+        print("-" * 60)
+
+        for key in staff.keys():
+            print(
+                f"{key.replace('_', ' ').title()} : "
+                f"{staff[key]}"
+            )
+
+    print("=" * 60)
+
+    connection.close()
+
+def salary_report():
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM salary
+        ORDER BY salary_id DESC
+    """)
+
+    salaries = cursor.fetchall()
+
+    print("=" * 60)
+    print("             SALARY REPORT")
+    print("=" * 60)
+
+    if not salaries:
+        print("No Salary Records Found.")
+        connection.close()
+        return
+
+    for salary in salaries:
+
+        print("-" * 60)
+
+        for key in salary.keys():
+            print(
+                f"{key.replace('_', ' ').title()} : "
+                f"{salary[key]}"
+            )
+
+    print("=" * 60)
+
+    connection.close()
+
+def inventory_report():
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM inventory
+        ORDER BY item_id
+    """)
+
+    items = cursor.fetchall()
+
+    print("=" * 60)
+    print("            INVENTORY REPORT")
+    print("=" * 60)
+
+    if not items:
+        print("No Inventory Records Found.")
+        connection.close()
+        return
+
+    for item in items:
+
+        print("-" * 60)
+
+        for key in item.keys():
+            print(
+                f"{key.replace('_', ' ').title()} : "
+                f"{item[key]}"
+            )
+
+    print("=" * 60)
+
+    connection.close()
+
+def hotel_dashboard():
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT COUNT(*) AS total FROM customers")
+    total_customers = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT COUNT(*) AS total FROM orders")
+    total_orders = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT COUNT(*) AS total FROM room_bookings")
+    total_room_bookings = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT COUNT(*) AS total FROM table_bookings")
+    total_table_bookings = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT COUNT(*) AS total FROM staff")
+    total_staff = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT COUNT(*) AS total FROM inventory")
+    total_inventory_items = cursor.fetchone()["total"]
+
+    connection.close()
+
+    print("=" * 60)
+    print("                 HOTEL DASHBOARD")
+    print("=" * 60)
+
+    print(f"Total Customers       : {total_customers}")
+    print(f"Total Restaurant Orders : {total_orders}")
+    print(f"Total Room Bookings   : {total_room_bookings}")
+    print(f"Total Table Bookings  : {total_table_bookings}")
+    print(f"Total Staff           : {total_staff}")
+    print(f"Inventory Items       : {total_inventory_items}")
+
+    print("=" * 60)
+
+def hotel_dashboard():
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    tables = {
+        "Restaurant Orders": "orders",
+        "Room Bookings": "room_bookings",
+        "Table Bookings": "table_bookings",
+        "Customers": "customers",
+        "Staff": "staff",
+        "Departments": "department",
+        "Inventory Items": "inventory",
+        "Suppliers": "supplier"
+    }
+
+    results = {}
+
+    for title, table_name in tables.items():
+        cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+        results[title] = cursor.fetchone()[0]
+
+    connection.close()
+
+    print("=" * 60)
+    print("                 HOTEL DASHBOARD")
+    print("=" * 60)
+
+    for title, count in results.items():
+        print(f"{title:<25}: {count}")
+
+    print("=" * 60)

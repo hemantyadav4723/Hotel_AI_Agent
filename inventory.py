@@ -1,7 +1,18 @@
-from billing import *
+from database.db_manager import save_item, view_items, search_item, update_item, delete_item
 from utils.display import*
 from utils.display import *
 from utils.validators import *
+from database.db_manager import (
+    save_supplier,
+    view_supplier,
+    search_supplier,
+    update_supplier,
+    delete_supplier,
+    stock_in,
+    stock_out,
+    low_stock_alert,
+    purchase_history
+)
 
 def inventory_management():
 
@@ -66,11 +77,23 @@ def inventory_management():
 
         elif choice=="6":
 
-            stock_in()
+            item_id = input("Enter Item ID : ").upper()
+            quantity = validate_quantity("Enter Quantity : ")
+
+            stock_in(
+                item_id,
+                quantity
+            )
 
         elif choice=="7":
 
-            stock_out()
+            item_id = input("Enter Item ID : ").upper()
+            quantity = validate_quantity("Enter Quantity : ")
+
+            stock_out(
+                item_id,
+                quantity
+            )
 
         elif choice=="8":
 

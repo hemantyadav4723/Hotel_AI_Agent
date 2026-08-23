@@ -8,7 +8,8 @@ from database.db_manager import (
     check_room_available,
     book_room,
     get_all_rooms,
-    get_room_by_number
+    get_room_by_number,
+    is_room_booked
 )
 
 def room_booking():

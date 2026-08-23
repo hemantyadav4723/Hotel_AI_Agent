@@ -1,4 +1,4 @@
-from billing import *
+from database.db_manager import save_expense, view_expenses, search_expense, update_expense, delete_expense
 
 def expense_management():
 
@@ -20,17 +20,27 @@ def expense_management():
         if choice == "1":
 
             expense_id = input("Expense ID : ").upper()
-            title = input("Title : ")
+
+            expense_name = input("Expense Name : ")
+
+            amount = float(input("Amount : "))
+
             category = input("Category : ")
-            amount = input("Amount : ")
-            date = input("Date : ")
+
+            description = input("Description : ")
+
+            expense_date = input("Date (DD-MM-YYYY) : ")
+
+            expense_time = input("Time (HH:MM AM/PM) : ")
 
             save_expense(
                 expense_id,
-                title,
-                category,
+                expense_date,
+                expense_time,
+                expense_name,
                 amount,
-                date
+                category,
+                description
             )
 
             print("Expense Added Successfully.")

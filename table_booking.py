@@ -3,7 +3,8 @@ from database.db_manager import (
     get_table_by_number,
     check_table_available,
     book_table,
-    save_table_booking
+    save_table_booking,
+    is_table_booked
 )
 
 from utils.helpers import get_table_booking_customer_details

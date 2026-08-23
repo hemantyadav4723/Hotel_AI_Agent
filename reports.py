@@ -1,6 +1,16 @@
-from billing import *
 from utils.display import *
 from utils.validators import *
+from database.db_manager import (
+    sales_report,
+    restaurant_report,
+    room_report,
+    table_report,
+    customer_report,
+    staff_report,
+    salary_report,
+    inventory_report,
+    hotel_dashboard
+)
 
 def reports_management():
 

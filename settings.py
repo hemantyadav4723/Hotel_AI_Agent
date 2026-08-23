@@ -1,4 +1,4 @@
-from billing import *
+from database.db_manager import save_settings, view_settings
 
 def settings_management():
 

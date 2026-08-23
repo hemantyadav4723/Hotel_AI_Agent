@@ -1,9 +1,10 @@
+from database.db_manager import (
+    save_hotel_information,
+    get_hotel_information
+)
 from utils.validators import *
 from utils.display import *
-from utils.file_handler import *
 from data import *
-
-DATA_FILE = "data/hotel_data.txt"
 
 
 # ==========================================================
@@ -39,96 +40,37 @@ def load_hotel_data():
     global hotel_support_email
     global hotel_support_mobile
 
-    if not file_exists(DATA_FILE):
+    hotel = get_hotel_information()
+
+    if not hotel:
         return
 
-        lines = read_file(DATA_FILE)
-
-        for line in lines:
-
-            if "=" not in line:
-                continue
-
-            key, value = line.strip().split("=", 1)
-
-            if key == "hotel_name":
-                hotel_name = value
-
-            elif key == "hotel_owner":
-                hotel_owner = value
-
-            elif key == "hotel_type":
-                hotel_type = value
-
-            elif key == "hotel_established":
-                hotel_established = value
-
-            elif key == "hotel_description":
-                hotel_description = value
-
-            elif key == "hotel_address":
-                hotel_address = value
-
-            elif key == "hotel_city":
-                hotel_city = value
-
-            elif key == "hotel_state":
-                hotel_state = value
-
-            elif key == "hotel_country":
-                hotel_country = value
-
-            elif key == "hotel_pincode":
-                hotel_pincode = value
-
-            elif key == "hotel_mobile":
-                hotel_mobile = value
-
-            elif key == "hotel_email":
-                hotel_email = value
-
-            elif key == "hotel_website":
-                hotel_website = value
-
-            elif key == "hotel_rating":
-                hotel_rating = value
-
-            elif key == "total_rooms":
-                total_rooms = int(value)
-
-            elif key == "restaurant":
-                restaurant = value
-
-            elif key == "parking":
-                parking = value
-
-            elif key == "wifi":
-                wifi = value
-
-            elif key == "laundry":
-                laundry = value
-
-            elif key == "hotel_checkin_time":
-                hotel_checkin_time = value
-
-            elif key == "hotel_checkout_time":
-                hotel_checkout_time = value
-
-            elif key == "hotel_opening":
-                hotel_opening = value
-
-            elif key == "hotel_closing":
-                hotel_closing = value
-
-            elif key == "hotel_currency":
-                hotel_currency = value
-
-            elif key == "hotel_support_email":
-                hotel_support_email = value
-
-            elif key == "hotel_support_mobile":
-                hotel_support_mobile = value
-
+    hotel_name = hotel["hotel_name"]
+    hotel_owner = hotel["hotel_owner"]
+    hotel_type = hotel["hotel_type"]
+    hotel_established = hotel["hotel_established"]
+    hotel_description = hotel["hotel_description"]
+    hotel_address = hotel["hotel_address"]
+    hotel_city = hotel["hotel_city"]
+    hotel_state = hotel["hotel_state"]
+    hotel_country = hotel["hotel_country"]
+    hotel_pincode = hotel["hotel_pincode"]
+    hotel_mobile = hotel["hotel_mobile"]
+    hotel_email = hotel["hotel_email"]
+    hotel_website = hotel["hotel_website"]
+    hotel_rating = hotel["hotel_rating"]
+    total_rooms = hotel["total_rooms"]
+    restaurant = hotel["restaurant"]
+    parking = hotel["parking"]
+    wifi = hotel["wifi"]
+    laundry = hotel["laundry"]
+    hotel_checkin_time = hotel["hotel_checkin_time"]
+    hotel_checkout_time = hotel["hotel_checkout_time"]
+    hotel_opening = hotel["hotel_opening"]
+    hotel_closing = hotel["hotel_closing"]
+    hotel_currency = hotel["hotel_currency"]
+    hotel_support_email = hotel["hotel_support_email"]
+    hotel_support_mobile = hotel["hotel_support_mobile"]
 
 # ==========================================================
 # SAVE HOTEL DATA
@@ -136,36 +78,34 @@ def load_hotel_data():
 
 def save_hotel_data():
 
-    data = [
-        f"hotel_name={hotel_name}\n",
-        f"hotel_owner={hotel_owner}\n",
-        f"hotel_type={hotel_type}\n",
-        f"hotel_established={hotel_established}\n",
-        f"hotel_description={hotel_description}\n",
-        f"hotel_address={hotel_address}\n",
-        f"hotel_city={hotel_city}\n",
-        f"hotel_state={hotel_state}\n",
-        f"hotel_country={hotel_country}\n",
-        f"hotel_pincode={hotel_pincode}\n",
-        f"hotel_mobile={hotel_mobile}\n",
-        f"hotel_email={hotel_email}\n",
-        f"hotel_website={hotel_website}\n",
-        f"hotel_rating={hotel_rating}\n",
-        f"total_rooms={total_rooms}\n",
-        f"restaurant={restaurant}\n",
-        f"parking={parking}\n",
-        f"wifi={wifi}\n",
-        f"laundry={laundry}\n",
-        f"hotel_checkin_time={hotel_checkin_time}\n",
-        f"hotel_checkout_time={hotel_checkout_time}\n",
-        f"hotel_opening={hotel_opening}\n",
-        f"hotel_closing={hotel_closing}\n",
-        f"hotel_currency={hotel_currency}\n",
-        f"hotel_support_email={hotel_support_email}\n",
-        f"hotel_support_mobile={hotel_support_mobile}\n",
-    ]
-
-    write_file(DATA_FILE, data)
+    save_hotel_information(
+        hotel_name,
+        hotel_owner,
+        hotel_type,
+        hotel_established,
+        hotel_description,
+        hotel_address,
+        hotel_city,
+        hotel_state,
+        hotel_country,
+        hotel_pincode,
+        hotel_mobile,
+        hotel_email,
+        hotel_website,
+        hotel_rating,
+        total_rooms,
+        restaurant,
+        parking,
+        wifi,
+        laundry,
+        hotel_checkin_time,
+        hotel_checkout_time,
+        hotel_opening,
+        hotel_closing,
+        hotel_currency,
+        hotel_support_email,
+        hotel_support_mobile
+    )
 
 
 # ==========================================================
