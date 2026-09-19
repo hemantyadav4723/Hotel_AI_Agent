@@ -87,32 +87,6 @@ def get_customer_details(include_table=False):
         customer_address
     )
 
-from utils.validators import (
-    validate_name,
-    validate_mobile,
-    validate_email,
-    validate_address,
-    validate_table_number
-)
-
-# ==========================================================
-# CUSTOMER DETAILS
-# ==========================================================
-
-def get_customer_details():
-
-    customer_name = validate_name("Enter Customer Name : ")
-    customer_mobile = validate_mobile("Enter Mobile Number : ")
-    customer_email = validate_email("Enter Email : ")
-    customer_address = validate_address("Enter Address : ")
-
-    return (
-        customer_name,
-        customer_mobile,
-        customer_email,
-        customer_address
-    )
-
 # ==========================================================
 # RESTAURANT CUSTOMER DETAILS
 # ==========================================================

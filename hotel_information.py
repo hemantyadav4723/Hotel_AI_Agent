@@ -1,11 +1,34 @@
-from database.db_manager import (
+from database.hotel_information_db import (
     save_hotel_information,
     get_hotel_information
 )
-from utils.validators import *
-from utils.display import *
-from data import *
 
+from utils.validators import (
+    validate_name,
+    validate_mobile,
+    validate_email,
+    validate_website,
+    validate_rating,
+    validate_positive_number,
+    validate_available,
+    validate_time,
+    validate_currency,
+    validate_hotel_type,
+    validate_year,
+    validate_location,
+    validate_address,
+    validate_description,
+    validate_pincode,
+    validate_menu_choice
+)
+
+from utils.display import (
+    print_header,
+    print_footer,
+    print_success,
+    print_error,
+    press_enter
+)
 
 # ==========================================================
 # LOAD HOTEL DATA
@@ -130,7 +153,10 @@ def hotel_information():
 
         print_footer()
 
-        choice = input("Enter Your Choice : ")
+        choice = validate_menu_choice(
+           "Enter Your Choice : ",
+            ["1", "2", "3", "4", "5", "6"]
+        )
 
         if choice == "1":
 
@@ -301,7 +327,15 @@ def update_hotel_information():
 
         print_footer()
 
-        choice = input("Enter Your Choice : ")
+        choice = validate_menu_choice(
+            "Enter Your Choice : ",
+            [
+                "1", "2", "3", "4", "5", "6", "7",
+                "8", "9", "10", "11", "12", "13", "14",
+                "15", "16", "17", "18", "19", "20", "21",
+                "22", "23", "24", "25", "26", "27", "28"
+            ]
+        )
 
         if choice == "1":
             hotel_name = validate_name("New Hotel Name : ")

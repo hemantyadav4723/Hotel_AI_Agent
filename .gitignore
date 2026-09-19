@@ -1,0 +1,34 @@
+﻿# Runtime / database
+data/*.db
+data/backups/
+
+# Python cache
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Development tools
+.vscode/
+.idea/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Logs / runtime files
+logs/
+*.log
+
+# Local temporary files
+*.tmp
+*.temp
+
+# OS files
+.DS_Store
+Thumbs.db

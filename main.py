@@ -1,6 +1,4 @@
 from restaurant import restaurant_menu
-from billing import *
-from database.db_manager import delete_table_booking, view_table_bookings, search_table_booking
 from room_booking import room_booking
 from table_booking import table_booking
 from customer import customer_management
@@ -12,54 +10,32 @@ from feedback import feedback_management
 from login import login_management
 from settings import settings_management
 from hotel_information import hotel_information
-from data import *
-from database.db_manager import view_orders, search_order, delete_order
-from database.db_manager import view_room_bookings, search_room_booking, delete_room_booking
-from database.db_manager import (
-    create_customers_table,
-    create_staff_table,
-    create_attendance_table,
-    create_salary_table,
-    create_payroll_table,
-    create_department_table,
-    create_orders_table,
-    create_room_bookings_table,
-    create_rooms_table,
-    insert_default_rooms,
-    create_tables_table,
-    insert_default_tables,
-    create_table_bookings_table,
-    create_expenses_table,
-    create_feedback_table,
-    create_users_table,
-    create_settings_table,
-    create_inventory_table,
-    create_supplier_table,
-    create_hotel_information_table,
-    initialize_hotel_information
+from notifications import notifications_management
+from transportation import transportation_management
+from maps_navigation import maps_navigation
+from media import media_management
+from audit_activity import audit_activity_management
+from ai_tools import ai_tools_management
+from database.database import initialize_database
+from database.database_admin import database_management
+from database.table_booking_db import (
+    delete_table_booking,
+    view_table_bookings,
+    search_table_booking
 )
+from database.order_db import (
+    view_orders,
+    search_order,
+    delete_order
+)
+from database.room_booking_db import (
+    view_room_bookings,
+    search_room_booking,
+    delete_room_booking
+)
+from utils.validators import validate_menu_choice
 
-create_customers_table()
-create_staff_table()
-create_attendance_table()
-create_salary_table()
-create_payroll_table()
-create_department_table()
-create_orders_table()
-create_room_bookings_table()
-create_rooms_table()
-create_tables_table()
-create_table_bookings_table()
-insert_default_rooms()
-insert_default_tables()
-create_expenses_table()
-create_feedback_table()
-create_users_table()
-create_settings_table()
-create_inventory_table()
-create_supplier_table()
-create_hotel_information_table()
-initialize_hotel_information()
+initialize_database()
 
 while True:
 
@@ -92,11 +68,26 @@ while True:
     print("16. Feedback Management")
     print("17. Login Management")
     print("18. Settings Management")
-    print("19. Exit")
+    print("19. Notifications & Communication")
+    print("20. Transportation Management")
+    print("21. Maps & Navigation")
+    print("22. Hotel Visual / Media System")
+    print("23. Audit & Activity System")
+    print("24. AI-Ready Business Tools")
+    print("25. Database Management")
+    print("26. Exit")
 
     print("-" * 60)
 
-    choice = input("Enter Your Choice : ")
+    choice = validate_menu_choice(
+        "Enter Your Choice : ",
+        [
+            "1", "2", "3", "4", "5",
+            "6", "7", "8", "9", "10",
+            "11", "12", "13", "14", "15",
+            "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26"
+        ]
+    )
 
     if choice == "1":
         hotel_information()
@@ -125,7 +116,10 @@ while True:
         print("6. Delete Table Booking")
         print("7. Back")
 
-        booking_choice = input("Enter Your Choice : ")
+        booking_choice = validate_menu_choice(
+            "Enter Your Choice : ",
+            ["1", "2", "3", "4", "5", "6", "7"]
+        )
 
         if booking_choice == "1":
 
@@ -154,10 +148,6 @@ while True:
         elif booking_choice == "7":
 
             continue
-
-        else:
-
-            print("Invalid Choice")
 
         input("\nPress Enter to return to Main Menu...")
 
@@ -209,10 +199,26 @@ while True:
         settings_management()
         
     elif choice == "19":
+        notifications_management()
+
+    elif choice == "20":
+        transportation_management()
+
+    elif choice == "21":
+        maps_navigation()
+
+    elif choice == "22":
+        media_management()
+
+    elif choice == "23":
+        audit_activity_management()
+
+    elif choice == "24":
+        ai_tools_management()
+
+    elif choice == "25":
+        database_management()
+
+    elif choice == "26":
         print("Thank You...")
         break
-
-        input("\nPress Enter to return to Main Menu...")
-
-    else:
-        print("Invalid Choice")

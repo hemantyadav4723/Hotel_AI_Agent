@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'">
+  <title>YADAV HOTEL — Admin Dashboard</title>
+  <link rel="stylesheet" href="/dashboard/styles.css">
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <section id="login-view" class="login-shell">
+      <div class="login-card">
+        <div class="brand-mark">YH</div>
+        <p class="eyebrow">YADAV HOTEL AI AGENT PRO</p>
+        <h1>Admin Dashboard</h1>
+        <p class="muted">Secure hotel operations control center</p>
+        <form id="login-form" class="stack">
+          <label>Username<input id="login-username" autocomplete="username" required></label>
+          <label>Password<input id="login-password" type="password" autocomplete="current-password" required></label>
+          <label>Hotel ID <span class="muted">(optional)</span><input id="login-hotel" type="number" min="1" placeholder="Auto / default"></label>
+          <button class="primary wide" type="submit">Sign in</button>
+          <p id="login-error" class="form-error" role="alert"></p>
+        </form>
+        <div class="login-foot">API-backed • role-aware • hotel-scoped</div>
+      </div>
+    </section>
+
+    <section id="dashboard-view" class="dashboard-shell hidden">
+      <div id="sidebar-overlay" class="sidebar-overlay hidden" aria-hidden="true"></div>
+      <aside id="sidebar" class="sidebar">
+        <div class="sidebar-brand"><span class="brand-mark small">YH</span><div><strong>YADAV HOTEL</strong><small>Admin</small></div></div>
+        <nav id="nav" class="nav"></nav>
+        <button id="sidebar-close" class="sidebar-close" type="button" aria-label="Close navigation">✕ Close</button>
+        <button id="logout-btn" class="nav-logout">↪ Sign out</button>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <button id="menu-toggle" class="icon-btn" aria-label="Open navigation">☰</button>
+          <div class="topbar-title"><span id="breadcrumb">Dashboard</span><small id="hotel-context">Loading hotel…</small></div>
+          <div class="topbar-actions">
+            <button id="notification-btn" class="icon-btn notification-btn" title="Notifications" aria-label="Notifications"><span>◔</span><b id="notification-count" class="notification-count hidden">0</b></button>
+            <button id="refresh-btn" class="icon-btn" title="Refresh" aria-label="Refresh dashboard">↻</button>
+            <button id="user-btn" class="user-chip" aria-label="Open user profile"><span id="user-avatar">U</span><span id="user-label">User</span><span class="user-chevron">⌄</span></button>
+          </div>
+        </header>
+        <div id="toast-region" class="toast-region" aria-live="polite"></div>
+        <section id="page" class="page"></section>
+      </main>
+    </section>
+  </div>
+  <script src="/dashboard/config.js" defer></script>
+  <script src="/dashboard/app.js" defer></script>
+</body>
+</html>
