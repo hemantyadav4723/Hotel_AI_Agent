@@ -12,6 +12,8 @@ from typing import Any, Callable, TypeVar
 from ai.config import settings as ai_settings
 from api.config import settings as api_settings
 from database.database import get_connection
+from database.ai_tools_db import get_tool_registry
+from ai.safety import safety_guardrails
 
 T = TypeVar("T")
 
@@ -63,8 +65,26 @@ def validate_production_configuration() -> dict[str, Any]:
             issues.append("API_SECRET_KEY must be configured with a strong production secret.")
         if "*" in api_settings.cors_origins:
             issues.append("API_CORS_ORIGINS must not use '*' in production.")
+        if "*" in api_settings.trusted_hosts:
+            issues.append("API_TRUSTED_HOSTS must be explicitly configured in production.")
+        if os.getenv("API_FORCE_HTTPS", "").strip().lower() in {"0", "false", "no", "off"}:
+            issues.append("API_FORCE_HTTPS must be enabled in production.")
     if production_settings.is_production and not ai_settings.enabled:
         issues.append("AI_AGENT_ENABLED is disabled in production.")
+    if production_settings.is_production and ai_settings.enabled:
+        if not ai_settings.provider or ai_settings.provider.lower() == "none":
+            issues.append("AI_AGENT_PROVIDER must be configured in production.")
+        if not ai_settings.model:
+            issues.append("AI_AGENT_MODEL must be configured in production.")
+        if not ai_settings.api_key:
+            issues.append("AI_AGENT_API_KEY must be configured in production.")
+        tools = get_tool_registry()
+        if not tools:
+            issues.append("AI tool registry must contain at least one configured tool.")
+        elif any(not tool.get("hotel_scoped") for tool in tools):
+            issues.append("All production AI tools must enforce hotel scope.")
+        if not safety_guardrails.registry().get("protections"):
+            issues.append("AI production guardrails are not configured.")
     return {
         "environment": production_settings.environment,
         "ready": not issues,
@@ -73,6 +93,8 @@ def validate_production_configuration() -> dict[str, Any]:
         "ai_enabled": bool(ai_settings.enabled),
         "ai_provider": ai_settings.provider,
         "ai_model_configured": bool(ai_settings.model),
+        "ai_api_key_configured": bool(ai_settings.api_key),
+        "ai_api_secret_configured": bool(ai_settings.api_secret),
         "rate_limit_per_minute": production_settings.ai_rate_limit_per_minute,
         "max_concurrent_requests": production_settings.max_concurrent_requests,
         "retry_policy": {"max_retries": production_settings.ai_max_retries, "backoff_seconds": production_settings.ai_retry_backoff_seconds},

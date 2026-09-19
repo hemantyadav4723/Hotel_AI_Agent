@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from api.common import row_dict, rows_dict
 from api.dependencies import get_current_user, require_permission
-from database.database_admin import run_database_health_check, is_database_healthy, backup_database, restore_database
+from database.database_admin import run_database_health_check, is_database_healthy, backup_database, backup_configuration, restore_database
 from database.audit_db import get_audit_logs, get_record_audit
 from database.permission_db import get_active_permissions
 from database.role_db import SYSTEM_ROLES
@@ -71,3 +71,8 @@ def users(user=Depends(require_permission("Users", "View"))):
 @router.post("/admin/backup")
 def backup(user=Depends(require_permission("Users", "Create"))):
     return {"data": backup_database(backup_type="API")}
+
+
+@router.post("/admin/configuration-backup")
+def configuration_backup(user=Depends(require_permission("Users", "Create"))):
+    return {"data": backup_configuration()}

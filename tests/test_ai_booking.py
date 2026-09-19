@@ -1,3 +1,4 @@
+import pytest
 from datetime import date
 from unittest.mock import patch
 
@@ -6,8 +7,29 @@ from fastapi.testclient import TestClient
 from ai.booking import AIBookingAutomation, BookingItem
 from ai.context import AIRequestContext
 from api.app import app
+from database.database import get_connection
+from database.room_booking_db import add_room
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def room_booking_test_data():
+    """Provide only the room/payment prerequisites needed by room-booking AI tests."""
+    connection = get_connection()
+    connection.execute("DELETE FROM room_reservation_advance_rules WHERE hotel_id = ? AND room_number = ?", (1, "101"))
+    connection.execute("DELETE FROM rooms WHERE hotel_id = ? AND room_number = ?", (1, "101"))
+    connection.commit()
+    connection.close()
+    add_room("101", "Deluxe", 1, 2, 2000, "", "AI booking test room")
+    try:
+        yield
+    finally:
+        connection = get_connection()
+        connection.execute("DELETE FROM room_reservation_advance_rules WHERE hotel_id = ? AND room_number = ?", (1, "101"))
+        connection.execute("DELETE FROM rooms WHERE hotel_id = ? AND room_number = ?", (1, "101"))
+        connection.commit()
+        connection.close()
 
 
 def context():

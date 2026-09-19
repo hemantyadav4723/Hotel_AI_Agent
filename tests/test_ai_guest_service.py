@@ -1,3 +1,4 @@
+import pytest
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -6,6 +7,7 @@ from ai.context import AIRequestContext
 from ai.guest_service import AIGuestServiceAgent
 from api.app import app
 from database.database import get_connection
+from database.room_booking_db import add_room
 from database.guest_service_db import (
     create_guest_service_requests_table,
     get_guest_service_request,
@@ -13,6 +15,28 @@ from database.guest_service_db import (
 
 ROOT = Path(__file__).resolve().parents[1]
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def guest_service_test_rooms():
+    """Provide isolated room references required by guest-service AI tests."""
+    connection = get_connection()
+    for room_number in ("101", "102", "103"):
+        connection.execute("DELETE FROM room_reservation_advance_rules WHERE hotel_id = ? AND room_number = ?", (1, room_number))
+        connection.execute("DELETE FROM rooms WHERE hotel_id = ? AND room_number = ?", (1, room_number))
+    connection.commit()
+    connection.close()
+    for room_number in ("101", "102", "103"):
+        add_room(room_number, "Deluxe", 1, 2, 2000, "", "AI guest service test room")
+    try:
+        yield
+    finally:
+        connection = get_connection()
+        for room_number in ("101", "102", "103"):
+            connection.execute("DELETE FROM room_reservation_advance_rules WHERE hotel_id = ? AND room_number = ?", (1, room_number))
+            connection.execute("DELETE FROM rooms WHERE hotel_id = ? AND room_number = ?", (1, room_number))
+        connection.commit()
+        connection.close()
 
 
 def context():

@@ -32,3 +32,6 @@ logs/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Dashboard production build artifact
+dashboard/dist/

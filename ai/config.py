@@ -13,6 +13,8 @@ from dataclasses import dataclass
 class AISettings:
     enabled: bool = os.getenv("AI_AGENT_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
     provider: str = os.getenv("AI_AGENT_PROVIDER", "none").strip() or "none"
+    api_key: str = os.getenv("AI_AGENT_API_KEY", "").strip()
+    api_secret: str = os.getenv("AI_AGENT_API_SECRET", "").strip()
     model: str = os.getenv("AI_AGENT_MODEL", "").strip()
     request_timeout_seconds: float = float(os.getenv("AI_AGENT_TIMEOUT_SECONDS", "30"))
     max_input_characters: int = int(os.getenv("AI_AGENT_MAX_INPUT_CHARACTERS", "8000"))

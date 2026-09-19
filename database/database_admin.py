@@ -12,11 +12,24 @@ Phase 5 foundation:
 """
 
 from datetime import datetime
+import hashlib
+import json
 import os
 import shutil
 import sqlite3
+import zipfile
+from pathlib import Path
 
-from database.database import DATABASE_PATH, get_connection
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+from database.database import (
+    DATABASE_BACKUP_DIR,
+    DATABASE_PATH,
+    SQLITE_BUSY_TIMEOUT_MS,
+    SQLITE_JOURNAL_MODE,
+    SQLITE_SYNCHRONOUS,
+    get_connection,
+)
 
 SCHEMA_VERSION = "5.0.0"
 SCHEMA_MIGRATION_KEY = "phase5_sqlite_foundation_v1"
@@ -45,9 +58,30 @@ EXPECTED_TABLES = (
     "transportation_vehicles", "user_role_assignments", "users",
 )
 
+INTERNAL_TABLES = (
+    "database_metadata", "database_schema_migrations", "database_backup_history",
+)
+
 # These are intentionally global/identity masters. All other business tables
 # are expected to carry hotel_id for tenant isolation.
 GLOBAL_TABLES = {"customers", "hotels", "notification_channels", "settings"}
+
+# Configuration backups intentionally contain only non-secret deployment/configuration
+# artifacts. Real .env files and credential values are never copied.
+CONFIGURATION_BACKUP_FILES = (
+    ".env.example",
+    "requirements.txt",
+    "requirements-dev.txt",
+    "api/config.py",
+    "ai/config.py",
+    "database/database.py",
+    "PRODUCTION_READINESS.md",
+)
+SECRET_ENV_KEYS = {
+    "API_SECRET_KEY",
+    "AI_AGENT_API_KEY",
+    "AI_AGENT_API_SECRET",
+}
 
 
 def _now():
@@ -129,6 +163,20 @@ def _index_names(connection):
     return {row["name"] for row in rows}
 
 
+def get_schema_migration_status():
+    """Return applied schema migrations in deterministic order."""
+    connection = get_connection()
+    try:
+        rows = connection.execute(
+            """SELECT migration_key, version, applied_at
+               FROM database_schema_migrations
+               ORDER BY migration_id"""
+        ).fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        connection.close()
+
+
 def run_database_health_check():
     """Return a complete, read-only health report for the current database."""
     connection = get_connection()
@@ -161,6 +209,7 @@ def run_database_health_check():
         foreign_keys = connection.execute("PRAGMA foreign_keys").fetchone()[0]
         journal_mode = connection.execute("PRAGMA journal_mode").fetchone()[0]
         busy_timeout = connection.execute("PRAGMA busy_timeout").fetchone()[0]
+        synchronous = connection.execute("PRAGMA synchronous").fetchone()[0]
 
         index_hotel_gaps = []
         for table in EXPECTED_TABLES:
@@ -195,6 +244,7 @@ def run_database_health_check():
             "database_path": DATABASE_PATH,
             "database_exists": os.path.isfile(DATABASE_PATH),
             "database_size_bytes": os.path.getsize(DATABASE_PATH) if os.path.isfile(DATABASE_PATH) else 0,
+            "database_backup_dir": DATABASE_BACKUP_DIR,
             "schema_version": version_value,
             "expected_table_count": len(EXPECTED_TABLES),
             "actual_table_count": len(tables),
@@ -208,7 +258,12 @@ def run_database_health_check():
             "foreign_keys_enabled": bool(foreign_keys),
             "journal_mode": journal_mode,
             "busy_timeout_ms": busy_timeout,
+            "synchronous": synchronous,
+            "configured_journal_mode": SQLITE_JOURNAL_MODE,
+            "configured_busy_timeout_ms": SQLITE_BUSY_TIMEOUT_MS,
+            "configured_synchronous": SQLITE_SYNCHRONOUS,
             "legacy_txt_files": legacy_txt_files,
+            "schema_migrations": get_schema_migration_status(),
         }
     finally:
         connection.close()
@@ -225,6 +280,8 @@ def is_database_healthy(report=None):
         and not report["foreign_key_check_errors"]
         and report["integrity_check"] == "ok"
         and report["foreign_keys_enabled"]
+        and report["journal_mode"].upper() == report["configured_journal_mode"].upper()
+        and report["busy_timeout_ms"] >= report["configured_busy_timeout_ms"]
     )
 
 
@@ -242,21 +299,106 @@ def _validate_sqlite_file(path):
                 "SELECT name FROM sqlite_master WHERE type='table'"
             ).fetchall()
         }
-        missing = [t for t in EXPECTED_TABLES if t not in tables]
+        missing = [t for t in (*EXPECTED_TABLES, *INTERNAL_TABLES) if t not in tables]
         if missing:
             raise ValueError(f"Backup is missing required tables: {', '.join(missing[:8])}")
     finally:
         connection.close()
 
 
+def _configuration_manifest():
+    """Build a secret-free configuration manifest for recovery use."""
+    env_keys = [
+        "APP_ENV", "LOG_LEVEL", "API_HOST", "API_PORT", "API_WORKERS",
+        "API_SECRET_KEY", "API_CORS_ORIGINS", "API_TRUSTED_HOSTS",
+        "API_PROXY_HEADERS", "API_FORWARDED_ALLOW_IPS", "API_ACCESS_LOG",
+        "API_DOCS_ENABLED", "API_FORCE_HTTPS", "API_RATE_LIMIT_PER_MINUTE",
+        "HOTEL_DATABASE_PATH", "HOTEL_DATABASE_BACKUP_DIR",
+        "SQLITE_BUSY_TIMEOUT_MS", "SQLITE_JOURNAL_MODE", "SQLITE_SYNCHRONOUS",
+        "AI_AGENT_ENABLED", "AI_AGENT_PROVIDER", "AI_AGENT_MODEL",
+        "AI_AGENT_API_KEY", "AI_AGENT_API_SECRET", "AI_AGENT_TIMEOUT_SECONDS",
+        "AI_AGENT_MAX_INPUT_CHARACTERS", "AI_AGENT_MAX_RETRIES",
+        "AI_AGENT_RETRY_BACKOFF_SECONDS", "AI_MAX_CONCURRENT_REQUESTS",
+        "HEALTH_CHECK_TIMEOUT_SECONDS",
+    ]
+    return {
+        "generated_at": _now(),
+        "secret_policy": "Secret values are excluded; inject production secrets separately.",
+        "environment_variables": [
+            {"name": key, "secret": key in SECRET_ENV_KEYS, "value": "<REDACTED>" if key in SECRET_ENV_KEYS else os.getenv(key, "")}
+            for key in env_keys
+        ],
+    }
+
+
+def backup_configuration(destination=None):
+    """Create a verified, secret-free configuration recovery archive."""
+    if destination is None:
+        os.makedirs(DATABASE_BACKUP_DIR, exist_ok=True)
+        destination = os.path.join(
+            DATABASE_BACKUP_DIR,
+            f"configuration_backup_{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}.zip"
+        )
+    destination = os.path.abspath(destination)
+    os.makedirs(os.path.dirname(destination), exist_ok=True)
+    temp = destination + ".tmp"
+    manifest = _configuration_manifest()
+    included = []
+    try:
+        if os.path.exists(temp):
+            os.remove(temp)
+        with zipfile.ZipFile(temp, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            for relative in CONFIGURATION_BACKUP_FILES:
+                source = Path(PROJECT_ROOT) / relative
+                if not source.is_file():
+                    continue
+                archive.write(source, arcname=relative)
+                included.append(relative)
+            manifest["included_files"] = included
+            manifest_bytes = json.dumps(manifest, indent=2, sort_keys=True).encode("utf-8")
+            archive.writestr("configuration_manifest.json", manifest_bytes)
+            manifest["manifest_sha256"] = hashlib.sha256(manifest_bytes).hexdigest()
+            archive.writestr("configuration_backup_metadata.json", json.dumps(manifest, indent=2, sort_keys=True))
+        with zipfile.ZipFile(temp, "r") as archive:
+            names = set(archive.namelist())
+            required = set(included) | {"configuration_manifest.json", "configuration_backup_metadata.json"}
+            if not required.issubset(names):
+                raise ValueError("Configuration backup is missing required recovery artifacts.")
+            if any(name == ".env" or name.endswith("/.env") for name in names):
+                raise ValueError("Configuration backup must not contain a real .env file.")
+            for name in names:
+                if name.endswith(".zip") or name.endswith(".db"):
+                    raise ValueError("Configuration backup contains an unexpected runtime archive/database.")
+            metadata = json.loads(archive.read("configuration_backup_metadata.json"))
+            for item in metadata.get("environment_variables", []):
+                if item.get("name") in SECRET_ENV_KEYS and item.get("value") != "<REDACTED>":
+                    raise ValueError("Secret value leaked into configuration backup metadata.")
+        os.replace(temp, destination)
+        connection = get_connection()
+        try:
+            connection.execute(
+                """INSERT INTO database_backup_history(
+                    source_path, backup_path, backup_type, status, created_at, details
+                ) VALUES(?, ?, 'CONFIGURATION', 'SUCCESS', ?, ?)""",
+                (str(PROJECT_ROOT), destination, _now(), "Verified secret-free configuration backup."),
+            )
+            connection.commit()
+        finally:
+            connection.close()
+        return destination
+    except Exception:
+        if os.path.exists(temp):
+            os.remove(temp)
+        raise
+
+
 def backup_database(destination=None, backup_type="MANUAL"):
     """Create and verify a consistent SQLite backup using SQLite backup API."""
     if destination is None:
-        backup_dir = os.path.join(os.path.dirname(DATABASE_PATH), "backups")
-        os.makedirs(backup_dir, exist_ok=True)
+        os.makedirs(DATABASE_BACKUP_DIR, exist_ok=True)
         destination = os.path.join(
-            backup_dir,
-            f"hotel_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
+            DATABASE_BACKUP_DIR,
+            f"hotel_backup_{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}.db"
         )
     destination = os.path.abspath(destination)
     source = os.path.abspath(DATABASE_PATH)
@@ -268,9 +410,11 @@ def backup_database(destination=None, backup_type="MANUAL"):
     try:
         if os.path.exists(temp):
             os.remove(temp)
-        source_conn = sqlite3.connect(source)
-        target_conn = sqlite3.connect(temp)
+        source_conn = sqlite3.connect(source, timeout=SQLITE_BUSY_TIMEOUT_MS / 1000)
+        target_conn = sqlite3.connect(temp, timeout=SQLITE_BUSY_TIMEOUT_MS / 1000)
         try:
+            source_conn.execute(f"PRAGMA busy_timeout = {SQLITE_BUSY_TIMEOUT_MS}")
+            source_conn.execute("PRAGMA wal_checkpoint(PASSIVE)")
             source_conn.backup(target_conn)
             target_conn.commit()
         finally:
@@ -334,6 +478,9 @@ def restore_database(backup_path):
             backup_conn.close()
         _validate_sqlite_file(temp)
         os.replace(temp, source)
+        for sidecar in (source + "-wal", source + "-shm"):
+            if os.path.exists(sidecar):
+                os.remove(sidecar)
         connection = get_connection()
         try:
             connection.execute(
@@ -363,8 +510,9 @@ def print_database_health_report(report=None):
     print(f"Indexes        : {report['index_count']}")
     print(f"Integrity      : {report['integrity_check']}")
     print(f"Foreign Keys   : {'Enabled' if report['foreign_keys_enabled'] else 'Disabled'}")
-    print(f"Journal Mode   : {report['journal_mode']}")
-    print(f"Busy Timeout   : {report['busy_timeout_ms']} ms")
+    print(f"Journal Mode   : {report['journal_mode']} (configured: {report['configured_journal_mode']})")
+    print(f"Busy Timeout   : {report['busy_timeout_ms']} ms (configured: {report['configured_busy_timeout_ms']} ms)")
+    print(f"Synchronous    : {report['synchronous']}")
     print(f"Legacy TXT     : {len(report['legacy_txt_files'])}")
     print(f"Hotel Scope    : {'PASS' if not report['hotel_scope_gaps'] and not report['null_hotel_id_rows'] else 'CHECK'}")
     print(f"FK Check       : {'PASS' if not report['foreign_key_check_errors'] else 'CHECK'}")
@@ -397,9 +545,10 @@ def database_management():
         print("=" * 70)
         print("1. Database Health Check")
         print("2. Schema / Migration Status")
-        print("3. Create Verified Backup")
-        print("4. Restore From Backup")
-        print("5. Back")
+        print("3. Create Verified Database Backup")
+        print("4. Create Configuration Backup")
+        print("5. Restore From Database Backup")
+        print("6. Back")
         choice = input("Enter Choice : ").strip()
 
         try:
@@ -409,24 +558,27 @@ def database_management():
                 report = run_database_health_check()
                 print(f"Schema Version : {report['schema_version'] or '-'}")
                 print(f"Migration Key  : {SCHEMA_MIGRATION_KEY}")
+                print(f"Migrations     : {len(report['schema_migrations'])}")
                 print(f"Integrity      : {report['integrity_check']}")
                 print(f"Foreign Keys   : {'Enabled' if report['foreign_keys_enabled'] else 'Disabled'}")
             elif choice == "3":
                 path = input("Backup path (Enter = default) : ").strip() or None
                 print(f"Backup created: {backup_database(path)}")
             elif choice == "4":
-                path = input("Verified backup file path : ").strip()
+                print(f"Configuration backup created: {backup_configuration()}")
+            elif choice == "5":
+                path = input("Verified database backup file path : ").strip()
                 if input("Restore this backup? (Y/N) : ").strip().upper() != "Y":
                     print("Restore cancelled.")
                 else:
                     print(f"Pre-restore backup retained at: {restore_database(path)}")
                     print("Database restored successfully. Restart the application before continuing.")
-            elif choice == "5":
+            elif choice == "6":
                 break
             else:
                 print("Invalid Choice.")
         except Exception as exc:
             print(f"Database Error: {exc}")
 
-        if choice != "5":
+        if choice != "6":
             input("\nPress Enter to continue...")

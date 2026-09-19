@@ -29,6 +29,12 @@ def decode_access_token(token: str) -> dict:
         payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
     except jwt.PyJWTError as exc:
         raise AuthenticationError("Invalid or expired access token.") from exc
-    if payload.get("type") != "access" or not payload.get("sub") or not payload.get("hotel_id"):
+    if payload.get("type") != "access" or not payload.get("sub") or not payload.get("username") or not payload.get("role"):
+        raise AuthenticationError("Invalid access token claims.")
+    try:
+        hotel_id = int(payload.get("hotel_id"))
+    except (TypeError, ValueError) as exc:
+        raise AuthenticationError("Invalid access token claims.") from exc
+    if hotel_id <= 0:
         raise AuthenticationError("Invalid access token claims.")
     return payload

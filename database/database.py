@@ -1,23 +1,77 @@
-import sqlite3
 import os
+import sqlite3
+from pathlib import Path
 
 
-DATABASE_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(__file__)),
-    "data",
-    "hotel.db"
-)
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_DATABASE_PATH = PROJECT_ROOT / "data" / "hotel.db"
+DEFAULT_DATABASE_BACKUP_DIR = PROJECT_ROOT / "data" / "backups"
+
+
+def _env_int(name: str, default: int, minimum: int = 1, maximum: int = 120000) -> int:
+    raw = os.getenv(name, str(default)).strip()
+    try:
+        value = int(raw)
+    except ValueError:
+        return default
+    return max(minimum, min(value, maximum))
+
+def _env_path(name: str, default: Path) -> str:
+    raw = os.getenv(name, "").strip()
+    return os.path.abspath(raw) if raw else str(default.resolve())
+
+
+# Production deployments can point the application at a dedicated database
+# volume without changing source code. Development keeps the historical path.
+DATABASE_PATH = _env_path("HOTEL_DATABASE_PATH", DEFAULT_DATABASE_PATH)
+DATABASE_BACKUP_DIR = _env_path("HOTEL_DATABASE_BACKUP_DIR", DEFAULT_DATABASE_BACKUP_DIR)
+SQLITE_BUSY_TIMEOUT_MS = _env_int("SQLITE_BUSY_TIMEOUT_MS", 30000, 1000, 120000)
+SQLITE_JOURNAL_MODE = os.getenv("SQLITE_JOURNAL_MODE", "WAL").strip().upper() or "WAL"
+SQLITE_SYNCHRONOUS = os.getenv("SQLITE_SYNCHRONOUS", "NORMAL").strip().upper() or "NORMAL"
+_ALLOWED_JOURNAL_MODES = {"DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"}
+_ALLOWED_SYNCHRONOUS = {"OFF", "NORMAL", "FULL", "EXTRA"}
+
+if SQLITE_JOURNAL_MODE not in _ALLOWED_JOURNAL_MODES:
+    raise ValueError(f"Unsupported SQLITE_JOURNAL_MODE: {SQLITE_JOURNAL_MODE}")
+if SQLITE_SYNCHRONOUS not in _ALLOWED_SYNCHRONOUS:
+    raise ValueError(f"Unsupported SQLITE_SYNCHRONOUS: {SQLITE_SYNCHRONOUS}")
+
+
+def ensure_database_directories():
+    """Create the configured database and backup directories if required."""
+    Path(DATABASE_PATH).parent.mkdir(parents=True, exist_ok=True)
+    Path(DATABASE_BACKUP_DIR).mkdir(parents=True, exist_ok=True)
+
+
+def configure_database():
+    """Apply persistent SQLite settings required by the production runtime."""
+    ensure_database_directories()
+    connection = sqlite3.connect(DATABASE_PATH, timeout=SQLITE_BUSY_TIMEOUT_MS / 1000)
+    try:
+        connection.execute("PRAGMA foreign_keys = ON")
+        connection.execute(f"PRAGMA busy_timeout = {SQLITE_BUSY_TIMEOUT_MS}")
+        connection.execute(f"PRAGMA journal_mode = {SQLITE_JOURNAL_MODE}")
+        connection.execute(f"PRAGMA synchronous = {SQLITE_SYNCHRONOUS}")
+        connection.execute("PRAGMA temp_store = MEMORY")
+        connection.commit()
+    finally:
+        connection.close()
 
 
 def get_connection():
-    connection = sqlite3.connect(DATABASE_PATH, timeout=30)
+    ensure_database_directories()
+    connection = sqlite3.connect(DATABASE_PATH, timeout=SQLITE_BUSY_TIMEOUT_MS / 1000)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
-    connection.execute("PRAGMA busy_timeout = 30000")
+    connection.execute(f"PRAGMA busy_timeout = {SQLITE_BUSY_TIMEOUT_MS}")
+    connection.execute(f"PRAGMA synchronous = {SQLITE_SYNCHRONOUS}")
+    connection.execute("PRAGMA temp_store = MEMORY")
     return connection
 
 
 def initialize_database():
+    # Configure the runtime before any schema creation/migration work.
+    configure_database()
 
     from database.customer_db import (
         create_customers_table,
@@ -68,7 +122,9 @@ def initialize_database():
     from database.table_booking_db import (
         create_tables_table,
         insert_default_tables,
-        create_table_bookings_table
+        create_table_bookings_table,
+        ensure_table_assignments_table,
+        ensure_table_merge_tables,
     )
 
     from database.expenses_db import create_expenses_table
@@ -173,6 +229,10 @@ def initialize_database():
     create_tables_table()
     insert_default_tables()
     create_table_bookings_table()
+    with get_connection() as connection:
+        ensure_table_assignments_table(connection)
+        ensure_table_merge_tables(connection)
+        connection.commit()
     create_cleaning_tasks_table()
     sync_existing_cleaning_tasks()
     create_guest_service_requests_table()
