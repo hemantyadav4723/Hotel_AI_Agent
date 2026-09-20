@@ -454,48 +454,82 @@ def backup_database(destination=None, backup_type="MANUAL"):
 
 
 def restore_database(backup_path):
-    """Safely restore a verified backup, keeping a pre-restore backup first."""
+    """Safely restore a verified backup without replacing an open SQLite file."""
     backup_path = os.path.abspath(str(backup_path).strip())
     source = os.path.abspath(DATABASE_PATH)
+
     if not os.path.isfile(backup_path):
         raise FileNotFoundError("Backup file was not found.")
+
     if backup_path == source:
         raise ValueError("Restore source cannot be the active database file.")
 
     _validate_sqlite_file(backup_path)
+
+    # Always retain a verified pre-restore backup first.
     pre_restore = backup_database(backup_type="PRE_RESTORE")
-    temp = source + ".restore.tmp"
+
     try:
-        if os.path.exists(temp):
-            os.remove(temp)
-        backup_conn = sqlite3.connect(backup_path)
-        target_conn = sqlite3.connect(temp)
+        # Restore directly through SQLite's backup API.
+        # This avoids os.replace() on Windows, where an existing/open
+        # SQLite database file can produce WinError 5.
+        backup_conn = sqlite3.connect(
+            backup_path,
+            timeout=SQLITE_BUSY_TIMEOUT_MS / 1000,
+        )
+        target_conn = sqlite3.connect(
+            source,
+            timeout=SQLITE_BUSY_TIMEOUT_MS / 1000,
+        )
+
         try:
+            backup_conn.execute(
+                f"PRAGMA busy_timeout = {SQLITE_BUSY_TIMEOUT_MS}"
+            )
+            target_conn.execute(
+                f"PRAGMA busy_timeout = {SQLITE_BUSY_TIMEOUT_MS}"
+            )
+            target_conn.execute("PRAGMA foreign_keys = ON")
+
             backup_conn.backup(target_conn)
             target_conn.commit()
         finally:
             target_conn.close()
             backup_conn.close()
-        _validate_sqlite_file(temp)
-        os.replace(temp, source)
+
+        _validate_sqlite_file(source)
+
+        # Remove stale WAL/SHM sidecars after the verified restore.
         for sidecar in (source + "-wal", source + "-shm"):
             if os.path.exists(sidecar):
-                os.remove(sidecar)
+                try:
+                    os.remove(sidecar)
+                except OSError as exc:
+                    log_non_blocking_error(
+                        "Non-blocking SQLite sidecar cleanup failed",
+                        exc,
+                    )
+
         connection = get_connection()
         try:
             connection.execute(
                 """INSERT INTO database_backup_history(
                     source_path, backup_path, backup_type, status, created_at, details
                 ) VALUES(?, ?, 'RESTORE', 'SUCCESS', ?, ?)""",
-                (backup_path, pre_restore, _now(), "Restored verified backup; pre-restore backup retained."),
+                (
+                    backup_path,
+                    pre_restore,
+                    _now(),
+                    "Restored verified backup; pre-restore backup retained.",
+                ),
             )
             connection.commit()
         finally:
             connection.close()
+
         return pre_restore
+
     except Exception:
-        if os.path.exists(temp):
-            os.remove(temp)
         raise
 
 

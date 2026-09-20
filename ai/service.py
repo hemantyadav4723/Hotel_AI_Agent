@@ -11,6 +11,7 @@ import re
 import uuid
 
 from ai.config import settings
+from ai.providers.gemini import get_gemini_provider
 from ai.context import AIRequestContext
 from database.ai_tools_db import execute_ai_tool, get_tool_definition
 from ai.observability import observability
@@ -309,6 +310,24 @@ class AIAgentCore:
             message = " ".join(messages)
             if failed:
                 message += " Some requested information could not be retrieved."
+
+            # Gemini is a response-generation layer only. Tool execution and
+            # hotel data access remain inside the existing controlled tool layer.
+            gemini = get_gemini_provider()
+            if gemini is not None:
+                try:
+                    message = gemini.generate_reply(
+                        user_message=request.message,
+                        tool_summaries=messages,
+                        hotel_id=request.context.hotel_id,
+                    )
+                except Exception as exc:
+                    observability.record_error(
+                        request.context,
+                        "ai_provider_error",
+                        str(exc),
+                        conversation_id,
+                    )
             handled = True
 
         response = AIResponse(

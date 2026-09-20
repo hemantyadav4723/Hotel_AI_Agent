@@ -257,6 +257,11 @@ def initialize_database():
     create_hr_audit_table()
     create_hr_integrity_guards()
 
+    # Optional first-admin bootstrap for fresh deployments. This is opt-in
+    # through environment variables and is a no-op once a hotel has users.
+    from database.user_db import bootstrap_admin_from_environment
+    bootstrap_admin_from_environment()
+
     create_settings_table()
     create_discount_rules_table()
 

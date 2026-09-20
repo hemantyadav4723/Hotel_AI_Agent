@@ -229,6 +229,55 @@ def save_user(user_id, username, password, role, staff_id=None, reason=None):
         connection.close()
 
 
+
+def bootstrap_admin_from_environment():
+    """Create the first Admin user from deployment environment variables.
+
+    This is intentionally opt-in and only works when the current hotel has
+    no users. Passwords are read from the environment and are never logged.
+    """
+    import os
+
+    enabled = os.getenv("BOOTSTRAP_ADMIN_ENABLED", "false").strip().lower() in {
+        "1", "true", "yes", "on"
+    }
+    if not enabled:
+        return False
+
+    user_id = os.getenv("BOOTSTRAP_ADMIN_USER_ID", "").strip()
+    username = os.getenv("BOOTSTRAP_ADMIN_USERNAME", "").strip()
+    password = os.getenv("BOOTSTRAP_ADMIN_PASSWORD", "")
+
+    if not user_id or not username or not password:
+        raise ValueError(
+            "BOOTSTRAP_ADMIN_ENABLED requires BOOTSTRAP_ADMIN_USER_ID, "
+            "BOOTSTRAP_ADMIN_USERNAME, and BOOTSTRAP_ADMIN_PASSWORD."
+        )
+
+    hotel_id = get_current_hotel_id()
+    connection = get_connection()
+    try:
+        existing_user = connection.execute(
+            "SELECT 1 FROM users WHERE hotel_id = ? LIMIT 1",
+            (hotel_id,),
+        ).fetchone()
+    finally:
+        connection.close()
+
+    if existing_user is not None:
+        return False
+
+    save_user(
+        user_id=user_id,
+        username=username,
+        password=password,
+        role="Admin",
+        staff_id=None,
+        reason="One-time deployment admin bootstrap.",
+    )
+    return True
+
+
 def view_users():
     hotel_id = get_current_hotel_id()
     connection = get_connection()
