@@ -1,5 +1,6 @@
 from utils.error_logging import log_non_blocking_error
 import json
+from datetime import datetime
 
 from database.database import get_connection
 
@@ -123,6 +124,8 @@ def migrate_customers_table(connection=None):
             "preferences": "TEXT",
             "special_requests": "TEXT",
             "guest_notes": "TEXT",
+            "government_id_type": "TEXT",
+            "government_id_status": "TEXT NOT NULL DEFAULT 'Not Provided'",
             "updated_time": "TEXT",
         }
 
@@ -200,7 +203,9 @@ def save_customer(
     is_active=1,
     preferences=None,
     special_requests=None,
-    guest_notes=None
+    guest_notes=None,
+    government_id_type=None,
+    government_id_status="Not Provided"
 ):
     """
     Create a Guest/Customer Master record.
@@ -254,13 +259,15 @@ def save_customer(
                 preferences,
                 special_requests,
                 guest_notes,
+                government_id_type,
+                government_id_status,
                 created_time,
                 updated_time
             )
             VALUES (
                 ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?,
-                ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?
             )
         """, (
             customer_id,
@@ -277,6 +284,8 @@ def save_customer(
             preferences,
             special_requests,
             guest_notes,
+            government_id_type,
+            government_id_status,
             created_time_value,
             created_time_value
         ))
@@ -417,7 +426,16 @@ def search_restaurant_guests(search_text=None, hotel_id=None):
             params.extend([value] * 4)
 
         query += """
-            ORDER BY c.customer_name COLLATE NOCASE ASC, c.customer_id ASC
+            ORDER BY
+                    substr(c.created_time, 7, 4) || '-' || substr(c.created_time, 4, 2) || '-' || substr(c.created_time, 1, 2) DESC,
+                    CASE
+                        WHEN upper(substr(c.created_time, 21, 2)) = 'PM' AND substr(c.created_time, 12, 2) != '12' THEN printf('%02d', CAST(substr(c.created_time, 12, 2) AS INTEGER) + 12)
+                        WHEN upper(substr(c.created_time, 21, 2)) = 'AM' AND substr(c.created_time, 12, 2) = '12' THEN '00'
+                        ELSE substr(c.created_time, 12, 2)
+                    END DESC,
+                    substr(c.created_time, 15, 2) DESC,
+                    substr(c.created_time, 18, 2) DESC,
+                    c.customer_id DESC
         """
 
         cursor.execute(query, tuple(params))
@@ -539,21 +557,29 @@ def get_guest_data_integrity_report(hotel_id=None):
         connection.close()
 
 
-def search_customers(search_text=None, search_field="all", guest_status=None, hotel_id=None):
+def search_customers(
+    search_text=None,
+    search_field="all",
+    guest_status=None,
+    hotel_id=None,
+    date_type="any",
+    date_from=None,
+    date_to=None,
+):
     """Search/filter guests from the centralized Guest Master."""
     search_text = str(search_text or "").strip()
     search_field = str(search_field or "all").strip().lower()
     guest_status = str(guest_status or "").strip()
 
     allowed_fields = {
-        "id": "customer_id",
-        "name": "customer_name",
-        "mobile": "customer_mobile",
-        "email": "customer_email",
-        "city": "customer_city",
-        "state": "customer_state",
-        "country": "customer_country",
-        "pincode": "customer_pincode",
+        "id": "c.customer_id",
+        "name": "c.customer_name",
+        "mobile": "c.customer_mobile",
+        "email": "c.customer_email",
+        "city": "c.customer_city",
+        "state": "c.customer_state",
+        "country": "c.customer_country",
+        "pincode": "c.customer_pincode",
     }
 
     if search_field not in {"all", *allowed_fields.keys()}:
@@ -562,6 +588,34 @@ def search_customers(search_text=None, search_field="all", guest_status=None, ho
     if guest_status and guest_status not in {"Active", "Inactive", "Blacklisted"}:
         raise ValueError("Invalid guest status filter.")
 
+    date_type = str(date_type or "created").strip().lower()
+    # Guest Master date filtering is intentionally based only on when the guest profile was created.
+    # Check-in/check-out or visit lifecycle dates are not part of this search.
+    if date_type not in {"any", "created"}:
+        raise ValueError("Invalid guest date filter.")
+    date_columns = {"created": "c.created_time"}
+
+    def _normalize_filter_date(value, field_name):
+        value = str(value or "").strip()
+        if not value:
+            return None
+        try:
+            return datetime.strptime(value, "%Y-%m-%d").date().isoformat()
+        except ValueError as exc:
+            raise ValueError(f"Invalid {field_name} date. Use YYYY-MM-DD.") from exc
+
+    normalized_from = _normalize_filter_date(date_from, "from")
+    normalized_to = _normalize_filter_date(date_to, "to")
+    today_iso = datetime.now().date().isoformat()
+    if normalized_from and normalized_from > today_iso:
+        raise ValueError("Guest dates cannot be in the future.")
+    if normalized_to and normalized_to > today_iso:
+        raise ValueError("Guest dates cannot be in the future.")
+    if normalized_from and normalized_to and normalized_from > normalized_to:
+        raise ValueError("From date cannot be later than To date.")
+    if (normalized_from or normalized_to) and date_type == "any":
+        raise ValueError("Select a guest date type before using date filters.")
+
     conditions = []
     params = []
 
@@ -569,7 +623,7 @@ def search_customers(search_text=None, search_field="all", guest_status=None, ho
     if hotel_id is not None:
         hotel_join = """
             INNER JOIN guest_hotel_relationships ghr
-                ON ghr.customer_id = customers.customer_id
+                ON ghr.customer_id = c.customer_id
                AND ghr.hotel_id = ?
                AND ghr.is_active = 1
         """
@@ -580,19 +634,19 @@ def search_customers(search_text=None, search_field="all", guest_status=None, ho
             value = f"%{search_text}%"
             conditions.append("""
                 (
-                    customer_id LIKE ?
-                    OR customer_name LIKE ? COLLATE NOCASE
-                    OR customer_mobile LIKE ?
-                    OR customer_email LIKE ? COLLATE NOCASE
-                    OR customer_city LIKE ? COLLATE NOCASE
-                    OR customer_state LIKE ? COLLATE NOCASE
-                    OR customer_country LIKE ? COLLATE NOCASE
-                    OR customer_pincode LIKE ?
+                    c.customer_id LIKE ?
+                    OR c.customer_name LIKE ? COLLATE NOCASE
+                    OR c.customer_mobile LIKE ?
+                    OR c.customer_email LIKE ? COLLATE NOCASE
+                    OR c.customer_city LIKE ? COLLATE NOCASE
+                    OR c.customer_state LIKE ? COLLATE NOCASE
+                    OR c.customer_country LIKE ? COLLATE NOCASE
+                    OR c.customer_pincode LIKE ?
                 )
             """)
             params.extend([value] * 8)
         elif search_field == "id":
-            conditions.append("customer_id = ?")
+            conditions.append("c.customer_id = ?")
             params.append(search_text.upper())
         else:
             column = allowed_fields[search_field]
@@ -600,8 +654,21 @@ def search_customers(search_text=None, search_field="all", guest_status=None, ho
             params.append(f"%{search_text}%")
 
     if guest_status:
-        conditions.append("guest_status = ?")
+        conditions.append("c.guest_status = ?")
         params.append(guest_status)
+
+    if date_type != "any" and (normalized_from or normalized_to):
+        column = date_columns[date_type]
+        # Stored timestamps use DD-MM-YYYY HH:MM:SS AM/PM. Convert their
+        # date portion to ISO order inside SQLite so date ranges compare
+        # chronologically rather than lexicographically.
+        iso_date = f"substr({column}, 7, 4) || '-' || substr({column}, 4, 2) || '-' || substr({column}, 1, 2)"
+        if normalized_from:
+            conditions.append(f"{iso_date} >= ?")
+            params.append(normalized_from)
+        if normalized_to:
+            conditions.append(f"{iso_date} <= ?")
+            params.append(normalized_to)
 
     where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
 
@@ -610,11 +677,20 @@ def search_customers(search_text=None, search_field="all", guest_status=None, ho
         cursor = connection.cursor()
         cursor.execute(
             f"""
-                SELECT customers.*
-                FROM customers
+                SELECT c.*
+                FROM customers c
                 {hotel_join}
                 {where_clause}
-                ORDER BY customer_name COLLATE NOCASE ASC, customer_id ASC
+                ORDER BY
+                    substr(c.created_time, 7, 4) || '-' || substr(c.created_time, 4, 2) || '-' || substr(c.created_time, 1, 2) DESC,
+                    CASE
+                        WHEN upper(substr(c.created_time, 21, 2)) = 'PM' AND substr(c.created_time, 12, 2) != '12' THEN printf('%02d', CAST(substr(c.created_time, 12, 2) AS INTEGER) + 12)
+                        WHEN upper(substr(c.created_time, 21, 2)) = 'AM' AND substr(c.created_time, 12, 2) = '12' THEN '00'
+                        ELSE substr(c.created_time, 12, 2)
+                    END DESC,
+                    substr(c.created_time, 15, 2) DESC,
+                    substr(c.created_time, 18, 2) DESC,
+                    c.customer_id DESC
             """,
             tuple(params),
         )
@@ -1079,6 +1155,53 @@ def update_customer_record(customer_id, customer_name, customer_mobile, customer
         try:
             from database.audit_db import log_business_activity
             log_business_activity(module="Customer", action="UPDATE", local_values=locals(), details="Business operation update_customer_record completed successfully.")
+        except Exception as exc:
+            log_non_blocking_error("Non-blocking optional operation failed", exc)
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
+def set_customer_status(customer_id, guest_status, hotel_id=None):
+    """Update only a guest's operational status without touching profile data."""
+    from database.hotel_context import get_current_hotel_id
+    if hotel_id is None:
+        hotel_id = get_current_hotel_id()
+    customer_id = _normalize_customer_id(customer_id)
+    guest_status = str(guest_status or "").strip()
+    if guest_status not in {"Active", "Inactive", "Blacklisted"}:
+        raise ValueError("Invalid guest status.")
+
+    connection = get_connection()
+    try:
+        cursor = connection.cursor()
+        cursor.execute(
+            """SELECT c.customer_id FROM customers c
+               INNER JOIN guest_hotel_relationships r
+                 ON r.customer_id=c.customer_id AND r.hotel_id=? AND r.is_active=1
+               WHERE c.customer_id=?""",
+            (hotel_id, customer_id),
+        )
+        if cursor.fetchone() is None:
+            raise ValueError("Guest is not associated with the selected hotel.")
+
+        is_active = 0 if guest_status == "Inactive" else 1
+        now = datetime.now().strftime("%d-%m-%Y %I:%M:%S %p")
+        cursor.execute(
+            "UPDATE customers SET guest_status=?, is_active=?, updated_time=? WHERE customer_id=?",
+            (guest_status, is_active, now, customer_id),
+        )
+        connection.commit()
+        try:
+            from database.audit_db import log_business_activity
+            log_business_activity(
+                module="Customer",
+                action="UPDATE",
+                local_values=locals(),
+                details=f"Guest status changed to {guest_status}.",
+            )
         except Exception as exc:
             log_non_blocking_error("Non-blocking optional operation failed", exc)
     except Exception:
@@ -2077,7 +2200,16 @@ def get_hotel_guests(hotel_id=None):
             INNER JOIN customers c
                 ON c.customer_id = r.customer_id
             WHERE r.hotel_id = ?
-            ORDER BY c.customer_name COLLATE NOCASE
+            ORDER BY
+                substr(c.created_time, 7, 4) || '-' || substr(c.created_time, 4, 2) || '-' || substr(c.created_time, 1, 2) DESC,
+                CASE
+                    WHEN upper(substr(c.created_time, 21, 2)) = 'PM' AND substr(c.created_time, 12, 2) != '12' THEN printf('%02d', CAST(substr(c.created_time, 12, 2) AS INTEGER) + 12)
+                    WHEN upper(substr(c.created_time, 21, 2)) = 'AM' AND substr(c.created_time, 12, 2) = '12' THEN '00'
+                    ELSE substr(c.created_time, 12, 2)
+                END DESC,
+                substr(c.created_time, 15, 2) DESC,
+                substr(c.created_time, 18, 2) DESC,
+                c.customer_id DESC
         """, (hotel_id,))
 
         return cursor.fetchall()
