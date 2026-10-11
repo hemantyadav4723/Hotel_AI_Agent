@@ -58,11 +58,11 @@ def login(payload: LoginRequest):
             detail="Invalid username or password.",
         )
 
-        if user["staff_id"] and user["staff_status"] not in {"New", "Active"}:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Login blocked because linked staff is inactive.",
-            )
+    if user["staff_id"] and user["staff_status"] not in {"New", "Active"}:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Login blocked because linked staff is inactive.",
+        )
 
     token = create_access_token(
         user_id=user["user_id"], username=user["username"], role=user["role"],
