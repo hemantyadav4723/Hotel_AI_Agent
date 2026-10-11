@@ -13,7 +13,7 @@ from database.hotel_context import get_current_hotel_id, set_current_hotel_id
 from database.user_db import _verify_password, _hash_password
 from database.permission_db import get_user_permissions
 
-logger = logging.getLogger("yadav_hotel.auth")
+logger = logging.getLogger("uvicorn.error")
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
