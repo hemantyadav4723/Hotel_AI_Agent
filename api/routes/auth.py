@@ -1,8 +1,11 @@
 import logging
+import os
+import secrets
 
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
 
 from api.dependencies import get_current_user
 from api.schemas import LoginRequest, PasswordChange, TokenResponse
@@ -16,6 +19,54 @@ from database.permission_db import get_user_permissions
 logger = logging.getLogger("uvicorn.error")
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+
+class AdminRecoveryRequest(BaseModel):
+    # This endpoint is disabled unless ADMIN_RECOVERY_TOKEN is configured.
+    token: str = Field(min_length=32, max_length=512)
+    username: str = Field(min_length=1, max_length=100)
+    hotel_id: int = Field(ge=1)
+    new_password: str = Field(min_length=12, max_length=256)
+
+
+@router.post("/admin-recovery")
+def recover_admin_password(payload: AdminRecoveryRequest):
+    """Temporary, environment-gated Admin password recovery for deployments without shell access.
+
+    Configure a long random ADMIN_RECOVERY_TOKEN only for the recovery window,
+    perform one reset, then remove the variable and redeploy immediately.
+    """
+    expected_token = os.getenv("ADMIN_RECOVERY_TOKEN", "")
+    if len(expected_token) < 32:
+        raise HTTPException(status_code=404, detail="Not found.")
+    if not secrets.compare_digest(payload.token, expected_token):
+        raise HTTPException(status_code=404, detail="Not found.")
+
+    connection = get_connection()
+    try:
+        row = connection.execute(
+            """SELECT user_id, role, status FROM users
+               WHERE lower(username) = lower(?) AND hotel_id = ?""",
+            (payload.username.strip(), payload.hotel_id),
+        ).fetchone()
+        if not row or str(row["role"]).strip().lower() != "admin" or row["status"] != "Active":
+            # Keep account-existence details out of the public response.
+            raise HTTPException(status_code=404, detail="Eligible Admin account not found.")
+
+        now = datetime.now().strftime("%d-%m-%Y %I:%M:%S %p")
+        cursor = connection.execute(
+            "UPDATE users SET password = ?, updated_at = ? WHERE user_id = ? AND hotel_id = ? AND role = ? AND status = 'Active'",
+            (_hash_password(payload.new_password), now, row["user_id"], payload.hotel_id, row["role"]),
+        )
+        if cursor.rowcount != 1:
+            connection.rollback()
+            raise HTTPException(status_code=409, detail="Admin password was not changed.")
+        connection.commit()
+        logger.warning("Admin password recovery completed for hotel_id=%s user_id=%s; disable ADMIN_RECOVERY_TOKEN now", payload.hotel_id, row["user_id"])
+    finally:
+        connection.close()
+
+    return {"message": "Admin password reset successfully. Remove ADMIN_RECOVERY_TOKEN from the deployment environment immediately and redeploy."}
 
 
 @router.post("/login", response_model=TokenResponse)
