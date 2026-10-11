@@ -11,19 +11,41 @@
 <body>
   <div id="app" class="app-shell">
     <section id="login-view" class="login-shell">
-      <div class="login-card">
-        <div class="brand-mark">YH</div>
-        <p class="eyebrow">YADAV HOTEL AI AGENT PRO</p>
-        <h1>Admin Dashboard</h1>
-        <p class="muted">Secure hotel operations control center</p>
-        <form id="login-form" class="stack">
-          <label>Username<input id="login-username" autocomplete="username" required></label>
-          <label>Password<input id="login-password" type="password" autocomplete="current-password" required></label>
-          <label>Hotel ID <span class="muted">(optional)</span><input id="login-hotel" type="number" min="1" placeholder="Auto / default"></label>
-          <button class="primary wide" type="submit">Sign in</button>
-          <p id="login-error" class="form-error" role="alert"></p>
-        </form>
-        <div class="login-foot">API-backed • role-aware • hotel-scoped</div>
+      <div class="login-ambient" aria-hidden="true"></div>
+      <div class="login-visual" aria-hidden="true">
+        <div class="login-visual-grid"></div>
+        <div class="login-orbit login-orbit-one"></div>
+        <div class="login-orbit login-orbit-two"></div>
+        <div class="login-visual-copy">
+          <div class="login-brand-line"><span class="brand-mark login-brand-mark">YH</span><span>HOTEL WARE</span></div>
+          <p class="login-kicker">INTELLIGENT HOTEL OPERATIONS</p>
+          <h1>Run your hotel.<br><em>Intelligently.</em></h1>
+          <p class="login-visual-text">One premium workspace for rooms, restaurant, staff, revenue and guest experience.</p>
+          <div class="login-pills"><span>AI OPERATIONS</span><span>24/7 VISIBILITY</span><span>ONE WORKSPACE</span></div>
+        </div>
+        <div class="login-visual-foot">YADAV HOTEL AI AGENT PRO <span>•</span> HOTEL OPERATING PLATFORM</div>
+      </div>
+
+      <div class="login-panel">
+        <div class="login-card">
+          <div class="login-card-head">
+            <div class="brand-mark login-card-mark">YH</div>
+            <div>
+              <p class="eyebrow">WELCOME BACK</p>
+              <h2>Sign in to HOTEL WARE</h2>
+              <p class="muted">Your hotel operations, in one place.</p>
+            </div>
+          </div>
+          <form id="login-form" class="stack">
+            <label>Username<input id="login-username" autocomplete="username" placeholder="Enter your username" required></label>
+            <label>Password<input id="login-password" type="password" autocomplete="current-password" placeholder="Enter your password" required></label>
+            <label>Hotel ID <span class="muted">(optional)</span><input id="login-hotel" type="number" min="1" placeholder="Auto / default"></label>
+            <button class="primary wide login-submit" type="submit"><span>Sign in</span><span aria-hidden="true">↗</span></button>
+            <p id="login-error" class="form-error" role="alert"></p>
+          </form>
+          <div class="login-foot"><span>SECURE ACCESS</span><span>ROLE-AWARE</span><span>HOTEL-SCOPED</span></div>
+        </div>
+        <p class="login-panel-note">Protected hotel operations control center</p>
       </div>
     </section>
 
@@ -44,6 +66,7 @@
             <button id="notification-btn" class="icon-btn notification-btn" title="Notifications" aria-label="Notifications"><span>◔</span><b id="notification-count" class="notification-count hidden">0</b></button>
             <button id="refresh-btn" class="icon-btn" title="Refresh" aria-label="Refresh dashboard">↻</button>
             <button id="user-btn" class="user-chip" aria-label="Open user profile"><span id="user-avatar">U</span><span id="user-label">User</span><span class="user-chevron">⌄</span></button>
+            <button id="kitchen-logout-btn" class="kitchen-logout hidden" type="button" aria-label="Sign out">↪ Sign out</button>
           </div>
         </header>
         <div id="toast-region" class="toast-region" aria-live="polite"></div>

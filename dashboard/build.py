@@ -16,7 +16,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "dashboard"
 DIST = SOURCE / "dist"
-ASSETS = ("index.html", "config.js", "app.js", "styles.css")
+ASSETS = (
+    "index.html",
+    "config.js",
+    "app.js",
+    "styles.css",
+    "rooms-reservations-hero.jpg",
+    "kitchen-food-hero.png",
+)
 
 
 def _sha256(path: Path) -> str:
