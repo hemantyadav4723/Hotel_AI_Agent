@@ -1,3 +1,5 @@
+import logging
+
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -10,6 +12,8 @@ from database.database import get_connection
 from database.hotel_context import get_current_hotel_id, set_current_hotel_id
 from database.user_db import _verify_password, _hash_password
 from database.permission_db import get_user_permissions
+
+logger = logging.getLogger("yadav_hotel.auth")
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -37,10 +41,28 @@ def login(payload: LoginRequest):
     finally:
         connection.close()
 
-    if not user or user["status"] != "Active" or not _verify_password(payload.password, user["password"]):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password.")
-    if user["staff_id"] and user["staff_status"] not in {"New", "Active"}:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Login blocked because linked staff is inactive.")
+    password_matches = bool(
+        user and _verify_password(payload.password, user["password"])
+    )
+
+    if not user or user["status"] != "Active" or not password_matches:
+        logger.warning(
+            "Login diagnostic: hotel_id=%s user_found=%s user_status=%s password_matches=%s",
+            hotel_id,
+            bool(user),
+            user["status"] if user else "NOT_FOUND",
+            password_matches,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password.",
+        )
+
+        if user["staff_id"] and user["staff_status"] not in {"New", "Active"}:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Login blocked because linked staff is inactive.",
+            )
 
     token = create_access_token(
         user_id=user["user_id"], username=user["username"], role=user["role"],
